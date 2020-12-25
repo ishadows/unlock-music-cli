@@ -9,24 +9,20 @@ import (
 )
 
 var (
-	xmMagicHeader    = []byte{'i', 'f', 'm', 't'}
-	xmMagicHeader2   = []byte{0xfe, 0xfe, 0xfe, 0xfe}
-	xmHeaders        map[string]string
-	ErrXmFileSize    = errors.New("xm invalid file size")
-	ErrXmMagicHeader = errors.New("xm magic header not matched")
-)
-
-func init() {
-	xmHeaders = map[string]string{
+	magicHeader  = []byte{'i', 'f', 'm', 't'}
+	magicHeader2 = []byte{0xfe, 0xfe, 0xfe, 0xfe}
+	typeMapping  = map[string]string{
 		" WAV": "wav",
 		"FLAC": "flac",
 		" MP3": "mp3",
 		" A4M": "m4a",
 	}
-}
+	ErrFileSize    = errors.New("xm invalid file size")
+	ErrMagicHeader = errors.New("xm magic header not matched")
+)
 
 type Decoder struct {
-	data      []byte
+	file      []byte
 	headerLen uint32
 	outputExt string
 	mask      byte
@@ -50,38 +46,38 @@ func (d *Decoder) GetMeta() common.Meta {
 }
 
 func NewDecoder(data []byte) *Decoder {
-	return &Decoder{data: data}
+	return &Decoder{file: data}
 }
 
 func (d *Decoder) Validate() error {
-	lenData := len(d.data)
+	lenData := len(d.file)
 	if lenData < 16 {
-		return ErrXmFileSize
+		return ErrFileSize
 	}
-	if !bytes.Equal(xmMagicHeader, d.data[:4]) ||
-		!bytes.Equal(xmMagicHeader2, d.data[8:12]) {
-		return ErrXmMagicHeader
+	if !bytes.Equal(magicHeader, d.file[:4]) ||
+		!bytes.Equal(magicHeader2, d.file[8:12]) {
+		return ErrMagicHeader
 	}
 
 	var ok bool
-	d.outputExt, ok = xmHeaders[string(d.data[4:8])]
+	d.outputExt, ok = typeMapping[string(d.file[4:8])]
 	if !ok {
-		return errors.New("detect unknown xm file type: " + string(d.data[4:8]))
+		return errors.New("detect unknown xm file type: " + string(d.file[4:8]))
 	}
 
-	if d.data[14] != 0 {
-		logging.Log().Warn("not a simple xm file", zap.Uint8("b[14]", d.data[14]))
+	if d.file[14] != 0 {
+		logging.Log().Warn("not a simple xm file", zap.Uint8("b[14]", d.file[14]))
 	}
-	d.headerLen = uint32(d.data[12]) | uint32(d.data[13])<<8 | uint32(d.data[14])<<16 // LittleEndian Unit24
+	d.headerLen = uint32(d.file[12]) | uint32(d.file[13])<<8 | uint32(d.file[14])<<16 // LittleEndian Unit24
 	if d.headerLen+16 > uint32(lenData) {
-		return ErrXmFileSize
+		return ErrFileSize
 	}
 	return nil
 }
 
 func (d *Decoder) Decode() error {
-	d.mask = d.data[15]
-	d.audio = d.data[16:]
+	d.mask = d.file[15]
+	d.audio = d.file[16:]
 	dataLen := uint32(len(d.audio))
 	for i := d.headerLen; i < dataLen; i++ {
 		d.audio[i] = ^(d.audio[i] - d.mask)
