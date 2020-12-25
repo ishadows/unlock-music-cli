@@ -143,7 +143,7 @@ func detectMgg256Mask(input []byte) (*Key256Mask, error) {
 		if confidence > 0 {
 			mask := input[idx128] ^ spHeader[idx128]
 
-			idx44 := key256Mapping128to44[idx128%128]
+			idx44 := key256Mapping128to44[idx128&0x7f] // equals: [idx128 % 128]
 			if _, ok2 := matrixConf[idx44][mask]; ok2 {
 				matrixConf[idx44][mask] += confidence
 			} else {
