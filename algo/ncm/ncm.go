@@ -28,14 +28,14 @@ var (
 
 func NewDecoder(data []byte) *Decoder {
 	return &Decoder{
-		data:       data,
-		fileLength: uint32(len(data)),
+		file:    data,
+		fileLen: uint32(len(data)),
 	}
 }
 
 type Decoder struct {
-	data       []byte
-	fileLength uint32
+	file    []byte
+	fileLen uint32
 
 	key []byte
 	box []byte
@@ -53,51 +53,51 @@ type Decoder struct {
 	offsetAudio uint32
 }
 
-func (f *Decoder) Validate() bool {
-	if !bytes.Equal(magicHeader, f.data[:len(magicHeader)]) {
+func (d *Decoder) Validate() bool {
+	if !bytes.Equal(magicHeader, d.file[:len(magicHeader)]) {
 		return false
 	}
 
 	/*if status.IsDebug {
-		logging.Log().Info("the unknown field of the header is: \n" + spew.Sdump(f.data[8:10]))
+		logging.Log().Info("the unknown field of the header is: \n" + spew.Sdump(d.file[8:10]))
 	}*/
-	f.offsetKey = 8 + 2
+	d.offsetKey = 8 + 2
 	return true
 }
 
 //todo: 读取前进行检查长度，防止越界
-func (f *Decoder) readKeyData() error {
-	if f.offsetKey == 0 || f.offsetKey+4 > f.fileLength {
-		return errors.New("invalid cover data offset")
+func (d *Decoder) readKeyData() error {
+	if d.offsetKey == 0 || d.offsetKey+4 > d.fileLen {
+		return errors.New("invalid cover file offset")
 	}
-	bKeyLen := f.data[f.offsetKey : f.offsetKey+4]
+	bKeyLen := d.file[d.offsetKey : d.offsetKey+4]
 	iKeyLen := binary.LittleEndian.Uint32(bKeyLen)
-	f.offsetMeta = f.offsetKey + 4 + iKeyLen
+	d.offsetMeta = d.offsetKey + 4 + iKeyLen
 
 	bKeyRaw := make([]byte, iKeyLen)
 	for i := uint32(0); i < iKeyLen; i++ {
-		bKeyRaw[i] = f.data[i+4+f.offsetKey] ^ 0x64
+		bKeyRaw[i] = d.file[i+4+d.offsetKey] ^ 0x64
 	}
 
-	f.key = utils.PKCS7UnPadding(utils.DecryptAes128Ecb(bKeyRaw, keyCore))[17:]
+	d.key = utils.PKCS7UnPadding(utils.DecryptAes128Ecb(bKeyRaw, keyCore))[17:]
 	return nil
 }
 
-func (f *Decoder) readMetaData() error {
-	if f.offsetMeta == 0 || f.offsetMeta+4 > f.fileLength {
-		return errors.New("invalid meta data offset")
+func (d *Decoder) readMetaData() error {
+	if d.offsetMeta == 0 || d.offsetMeta+4 > d.fileLen {
+		return errors.New("invalid meta file offset")
 	}
-	bMetaLen := f.data[f.offsetMeta : f.offsetMeta+4]
+	bMetaLen := d.file[d.offsetMeta : d.offsetMeta+4]
 	iMetaLen := binary.LittleEndian.Uint32(bMetaLen)
-	f.offsetCover = f.offsetMeta + 4 + iMetaLen
+	d.offsetCover = d.offsetMeta + 4 + iMetaLen
 	if iMetaLen == 0 {
-		return errors.New("no any meta data found")
+		return errors.New("no any meta file found")
 	}
 
 	// Why sub 22: Remove "163 key(Don't modify):"
 	bKeyRaw := make([]byte, iMetaLen-22)
 	for i := uint32(0); i < iMetaLen-22; i++ {
-		bKeyRaw[i] = f.data[f.offsetMeta+4+22+i] ^ 0x63
+		bKeyRaw[i] = d.file[d.offsetMeta+4+22+i] ^ 0x63
 	}
 
 	cipherText, err := base64.StdEncoding.DecodeString(string(bKeyRaw))
@@ -107,129 +107,129 @@ func (f *Decoder) readMetaData() error {
 	metaRaw := utils.PKCS7UnPadding(utils.DecryptAes128Ecb(cipherText, keyMeta))
 	sepIdx := bytes.IndexRune(metaRaw, ':')
 	if sepIdx == -1 {
-		return errors.New("invalid ncm meta data")
+		return errors.New("invalid ncm meta file")
 	}
 
-	f.metaType = string(metaRaw[:sepIdx])
-	f.metaRaw = metaRaw[sepIdx+1:]
+	d.metaType = string(metaRaw[:sepIdx])
+	d.metaRaw = metaRaw[sepIdx+1:]
 	return nil
 }
 
-func (f *Decoder) buildKeyBox() {
+func (d *Decoder) buildKeyBox() {
 	box := make([]byte, 256)
 	for i := 0; i < 256; i++ {
 		box[i] = byte(i)
 	}
 
-	keyLen := len(f.key)
+	keyLen := len(d.key)
 	var j byte
 	for i := 0; i < 256; i++ {
-		j = box[i] + j + f.key[i%keyLen]
+		j = box[i] + j + d.key[i%keyLen]
 		box[i], box[j] = box[j], box[i]
 	}
 
-	f.box = make([]byte, 256)
+	d.box = make([]byte, 256)
 	var _i byte
 	for i := 0; i < 256; i++ {
 		_i = byte(i + 1)
 		si := box[_i]
 		sj := box[_i+si]
-		f.box[i] = box[si+sj]
+		d.box[i] = box[si+sj]
 	}
 }
 
-func (f *Decoder) parseMeta() error {
-	switch f.metaType {
+func (d *Decoder) parseMeta() error {
+	switch d.metaType {
 	case "music":
-		f.Meta = new(RawMetaMusic)
-		return json.Unmarshal(f.metaRaw, f.Meta)
+		d.Meta = new(RawMetaMusic)
+		return json.Unmarshal(d.metaRaw, d.Meta)
 	case "dj":
-		f.Meta = new(RawMetaDJ)
+		d.Meta = new(RawMetaDJ)
+		return json.Unmarshal(d.metaRaw, d.Meta)
 	default:
-		return errors.New("unknown ncm meta type: " + f.metaType)
+		return errors.New("unknown ncm meta type: " + d.metaType)
 	}
-	return nil
 }
 
-func (f *Decoder) readCoverData() error {
-	if f.offsetCover == 0 || f.offsetCover+13 > f.fileLength {
-		return errors.New("invalid cover data offset")
+func (d *Decoder) readCoverData() error {
+	if d.offsetCover == 0 || d.offsetCover+13 > d.fileLen {
+		return errors.New("invalid cover file offset")
 	}
 
-	coverLenStart := f.offsetCover + 5 + 4
-	bCoverLen := f.data[coverLenStart : coverLenStart+4]
+	coverLenStart := d.offsetCover + 5 + 4
+	bCoverLen := d.file[coverLenStart : coverLenStart+4]
 
 	/*if status.IsDebug {
 		logging.Log().Info("the unknown field of the cover is: \n" +
-			spew.Sdump(f.data[f.offsetCover:f.offsetCover+5]))
-		coverLen2 := f.data[f.offsetCover+5 : f.offsetCover+5+4] // it seems that always the same
+			spew.Sdump(d.file[d.offsetCover:d.offsetCover+5]))
+		coverLen2 := d.file[d.offsetCover+5 : d.offsetCover+5+4] // it seems that always the same
 		if !bytes.Equal(coverLen2, bCoverLen) {
 			logging.Log().Warn("special file found! 2 cover length filed no the same!")
 		}
 	}*/
 
 	iCoverLen := binary.LittleEndian.Uint32(bCoverLen)
-	f.offsetAudio = coverLenStart + 4 + iCoverLen
+	d.offsetAudio = coverLenStart + 4 + iCoverLen
 	if iCoverLen == 0 {
-		return errors.New("no any cover data found")
+		return errors.New("no any cover file found")
 	}
-	f.Cover = f.data[coverLenStart+4 : 4+coverLenStart+iCoverLen]
+	d.Cover = d.file[coverLenStart+4 : 4+coverLenStart+iCoverLen]
 	return nil
 }
 
-func (f *Decoder) readAudioData() error {
-	if f.offsetAudio == 0 || f.offsetAudio > f.fileLength {
+func (d *Decoder) readAudioData() error {
+	if d.offsetAudio == 0 || d.offsetAudio > d.fileLen {
 		return errors.New("invalid audio offset")
 	}
-	audioRaw := f.data[f.offsetAudio:]
+	audioRaw := d.file[d.offsetAudio:]
 	audioLen := len(audioRaw)
-	f.Audio = make([]byte, audioLen)
+	d.Audio = make([]byte, audioLen)
 	for i := uint32(0); i < uint32(audioLen); i++ {
-		f.Audio[i] = f.box[i&0xff] ^ audioRaw[i]
+		d.Audio[i] = d.box[i&0xff] ^ audioRaw[i]
 	}
 	return nil
 }
 
-func (f *Decoder) Decode() error {
-	if err := f.readKeyData(); err != nil {
+func (d *Decoder) Decode() error {
+	if err := d.readKeyData(); err != nil {
 		return err
 	}
-	f.buildKeyBox()
+	d.buildKeyBox()
 
-	err := f.readMetaData()
+	err := d.readMetaData()
 	if err == nil {
-		err = f.parseMeta()
+		err = d.parseMeta()
 	}
 	if err != nil {
-		logging.Log().Warn("parse ncm meta data failed", zap.Error(err))
+		logging.Log().Warn("parse ncm meta file failed", zap.Error(err))
 	}
 
-	err = f.readCoverData()
+	err = d.readCoverData()
 	if err != nil {
-		logging.Log().Warn("parse ncm cover data failed", zap.Error(err))
+		logging.Log().Warn("parse ncm cover file failed", zap.Error(err))
 	}
 
-	return f.readAudioData()
+	return d.readAudioData()
 }
 
-func (f Decoder) GetAudioExt() string {
-	if f.Meta != nil {
-		return f.Meta.GetFormat()
+func (d Decoder) GetAudioExt() string {
+	if d.Meta != nil {
+		return d.Meta.GetFormat()
 	}
 	return ""
 }
 
-func (f Decoder) GetAudioData() []byte {
-	return f.Audio
+func (d Decoder) GetAudioData() []byte {
+	return d.Audio
 }
 
-func (f Decoder) GetCoverImage() []byte {
-	if f.Cover != nil {
-		return f.Cover
+func (d Decoder) GetCoverImage() []byte {
+	if d.Cover != nil {
+		return d.Cover
 	}
 	{
-		imgURL := f.Meta.GetAlbumImageURL()
-		if f.Meta != nil && !strings.HasPrefix(imgURL, "http") {
+		imgURL := d.Meta.GetAlbumImageURL()
+		if d.Meta != nil && !strings.HasPrefix(imgURL, "http") {
 			return nil
 		}
 		resp, err := http.Get(imgURL)
@@ -252,6 +252,6 @@ func (f Decoder) GetCoverImage() []byte {
 	}
 }
 
-func (f Decoder) GetMeta() common.Meta {
-	return f.Meta
+func (d Decoder) GetMeta() common.Meta {
+	return d.Meta
 }

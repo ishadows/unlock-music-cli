@@ -1,11 +1,12 @@
 package common
 
 type Decoder interface {
+	Validate() bool
 	Decode() error
 	GetCoverImage() []byte
 	GetAudioData() []byte
 	GetAudioExt() string
-	GetMeta() *Meta
+	GetMeta() Meta
 }
 
 type Meta interface {
