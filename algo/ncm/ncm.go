@@ -42,10 +42,10 @@ type Decoder struct {
 
 	metaRaw  []byte
 	metaType string
-	Meta     RawMeta
+	meta     RawMeta
 
-	Cover []byte
-	Audio []byte
+	cover []byte
+	audio []byte
 
 	offsetKey   uint32
 	offsetMeta  uint32
@@ -53,16 +53,16 @@ type Decoder struct {
 	offsetAudio uint32
 }
 
-func (d *Decoder) Validate() bool {
+func (d *Decoder) Validate() error {
 	if !bytes.Equal(magicHeader, d.file[:len(magicHeader)]) {
-		return false
+		return errors.New("ncm magic header not match")
 	}
 
 	/*if status.IsDebug {
 		logging.Log().Info("the unknown field of the header is: \n" + spew.Sdump(d.file[8:10]))
 	}*/
 	d.offsetKey = 8 + 2
-	return true
+	return nil
 }
 
 //todo: 读取前进行检查长度，防止越界
@@ -141,11 +141,11 @@ func (d *Decoder) buildKeyBox() {
 func (d *Decoder) parseMeta() error {
 	switch d.metaType {
 	case "music":
-		d.Meta = new(RawMetaMusic)
-		return json.Unmarshal(d.metaRaw, d.Meta)
+		d.meta = new(RawMetaMusic)
+		return json.Unmarshal(d.metaRaw, d.meta)
 	case "dj":
-		d.Meta = new(RawMetaDJ)
-		return json.Unmarshal(d.metaRaw, d.Meta)
+		d.meta = new(RawMetaDJ)
+		return json.Unmarshal(d.metaRaw, d.meta)
 	default:
 		return errors.New("unknown ncm meta type: " + d.metaType)
 	}
@@ -173,7 +173,7 @@ func (d *Decoder) readCoverData() error {
 	if iCoverLen == 0 {
 		return errors.New("no any cover file found")
 	}
-	d.Cover = d.file[coverLenStart+4 : 4+coverLenStart+iCoverLen]
+	d.cover = d.file[coverLenStart+4 : 4+coverLenStart+iCoverLen]
 	return nil
 }
 
@@ -183,9 +183,9 @@ func (d *Decoder) readAudioData() error {
 	}
 	audioRaw := d.file[d.offsetAudio:]
 	audioLen := len(audioRaw)
-	d.Audio = make([]byte, audioLen)
+	d.audio = make([]byte, audioLen)
 	for i := uint32(0); i < uint32(audioLen); i++ {
-		d.Audio[i] = d.box[i&0xff] ^ audioRaw[i]
+		d.audio[i] = d.box[i&0xff] ^ audioRaw[i]
 	}
 	return nil
 }
@@ -213,23 +213,23 @@ func (d *Decoder) Decode() error {
 }
 
 func (d Decoder) GetAudioExt() string {
-	if d.Meta != nil {
-		return d.Meta.GetFormat()
+	if d.meta != nil {
+		return d.meta.GetFormat()
 	}
 	return ""
 }
 
 func (d Decoder) GetAudioData() []byte {
-	return d.Audio
+	return d.audio
 }
 
 func (d Decoder) GetCoverImage() []byte {
-	if d.Cover != nil {
-		return d.Cover
+	if d.cover != nil {
+		return d.cover
 	}
 	{
-		imgURL := d.Meta.GetAlbumImageURL()
-		if d.Meta != nil && !strings.HasPrefix(imgURL, "http") {
+		imgURL := d.meta.GetAlbumImageURL()
+		if d.meta != nil && !strings.HasPrefix(imgURL, "http") {
 			return nil
 		}
 		resp, err := http.Get(imgURL)
@@ -253,5 +253,5 @@ func (d Decoder) GetCoverImage() []byte {
 }
 
 func (d Decoder) GetMeta() common.Meta {
-	return d.Meta
+	return d.meta
 }

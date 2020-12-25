@@ -5,8 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/umlock-music/cli/algo/common"
-	"github.com/umlock-music/cli/internal/logging"
-	"go.uber.org/zap"
 )
 
 var (
@@ -36,18 +34,19 @@ func NewMgg256Decoder(data []byte) *Decoder {
 	return &Decoder{file: data, maskDetector: detectMgg256Mask, audioExt: "ogg"}
 }
 
-func (d *Decoder) Validate() bool {
+func (d *Decoder) Validate() error {
 	if nil != d.mask {
-		return true
+		return nil
 	}
 	if nil != d.maskDetector {
 		if err := d.validateKey(); err != nil {
-			logging.Log().Error("detect file failed", zap.Error(err))
-			return false
+			return err
 		}
-		d.mask, _ = d.maskDetector(d.file)
+		var err error
+		d.mask, err = d.maskDetector(d.file)
+		return err
 	}
-	return d.mask != nil
+	return errors.New("no mask or mask detector found")
 }
 
 func (d *Decoder) validateKey() error {

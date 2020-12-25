@@ -1,7 +1,7 @@
 package common
 
 type Decoder interface {
-	Validate() bool
+	Validate() error
 	Decode() error
 	GetCoverImage() []byte
 	GetAudioData() []byte
