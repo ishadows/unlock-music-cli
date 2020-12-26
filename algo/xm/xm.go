@@ -84,13 +84,19 @@ func (d *Decoder) Decode() error {
 	}
 	return nil
 }
+
+func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
+	return func(file []byte) common.Decoder {
+		return &Decoder{file: file, outputExt: ext}
+	}
+}
+
 func init() {
 	// Xiami Wav/M4a/Mp3/Flac
 	common.RegisterDecoder("xm", NewDecoder)
 	// Xiami Typed Format
-	// todo: Init With Type
-	common.RegisterDecoder("wav", NewDecoder)
-	common.RegisterDecoder("mp3", NewDecoder)
-	common.RegisterDecoder("flac", NewDecoder)
-	common.RegisterDecoder("m4a", NewDecoder)
+	common.RegisterDecoder("wav", DecoderFuncWithExt("wav"))
+	common.RegisterDecoder("mp3", DecoderFuncWithExt("mp3"))
+	common.RegisterDecoder("flac", DecoderFuncWithExt("flac"))
+	common.RegisterDecoder("m4a", DecoderFuncWithExt("m4a"))
 }

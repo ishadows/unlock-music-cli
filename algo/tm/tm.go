@@ -54,16 +54,23 @@ func (d *Decoder) Decode() error {
 	return nil
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func NewDecoder(data []byte) common.Decoder {
 	return &Decoder{file: data}
 }
 
+func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
+	return func(file []byte) common.Decoder {
+		return &Decoder{file: file, audioExt: ext}
+	}
+}
+
 func init() {
 	// QQ Music IOS M4a
-	common.RegisterDecoder("tm2", NewDecoder)
-	common.RegisterDecoder("tm6", NewDecoder)
+	common.RegisterDecoder("tm2", DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("tm6", DecoderFuncWithExt("m4a"))
 	// QQ Music IOS Mp3
-	common.RegisterDecoder("tm0", common.NewRawDecoder)
-	common.RegisterDecoder("tm3", common.NewRawDecoder)
+	common.RegisterDecoder("tm0", common.DecoderFuncWithExt("mp3"))
+	common.RegisterDecoder("tm3", common.DecoderFuncWithExt("mp3"))
 
 }

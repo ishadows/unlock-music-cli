@@ -53,6 +53,7 @@ func (m RawMetaMusic) GetFormat() string {
 	return m.Format
 }
 
+//goland:noinspection SpellCheckingInspection
 type RawMetaDJ struct {
 	ProgramID          int          `json:"programId"`
 	ProgramName        string       `json:"programName"`
