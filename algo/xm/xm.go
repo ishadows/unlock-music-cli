@@ -45,7 +45,7 @@ func (d *Decoder) GetMeta() common.Meta {
 	return nil
 }
 
-func NewDecoder(data []byte) *Decoder {
+func NewDecoder(data []byte) common.Decoder {
 	return &Decoder{file: data}
 }
 
@@ -83,4 +83,14 @@ func (d *Decoder) Decode() error {
 		d.audio[i] = ^(d.audio[i] - d.mask)
 	}
 	return nil
+}
+func init() {
+	// Xiami Wav/M4a/Mp3/Flac
+	common.RegisterDecoder("xm", NewDecoder)
+	// Xiami Typed Format
+	// todo: Init With Type
+	common.RegisterDecoder("wav", NewDecoder)
+	common.RegisterDecoder("mp3", NewDecoder)
+	common.RegisterDecoder("flac", NewDecoder)
+	common.RegisterDecoder("m4a", NewDecoder)
 }

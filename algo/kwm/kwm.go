@@ -48,7 +48,7 @@ func (d *Decoder) GetMeta() common.Meta {
 	return nil
 }
 
-func NewDecoder(data []byte) *Decoder {
+func NewDecoder(data []byte) common.Decoder {
 	//todo: Notice the input data will be changed for now
 	return &Decoder{file: data}
 }
@@ -122,4 +122,9 @@ func padOrTruncate(raw string, length int) string {
 		out = string(_tmp)
 	}
 	return out
+}
+
+func init() {
+	// Kuwo Mp3/Flac
+	common.RegisterDecoder("kwm", NewDecoder)
 }

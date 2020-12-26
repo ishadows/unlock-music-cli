@@ -32,10 +32,6 @@ func (d *Decoder) GetMeta() common.Meta {
 	return nil
 }
 
-func NewDecoder(data []byte) *Decoder {
-	return &Decoder{file: data}
-}
-
 func (d *Decoder) Validate() error {
 	if len(d.file) < 8 {
 		return errors.New("invalid file size")
@@ -56,4 +52,18 @@ func (d *Decoder) Decode() error {
 		d.audioExt = "m4a"
 	}
 	return nil
+}
+
+func NewDecoder(data []byte) common.Decoder {
+	return &Decoder{file: data}
+}
+
+func init() {
+	// QQ Music IOS M4a
+	common.RegisterDecoder("tm2", NewDecoder)
+	common.RegisterDecoder("tm6", NewDecoder)
+	// QQ Music IOS Mp3
+	common.RegisterDecoder("tm0", common.NewRawDecoder)
+	common.RegisterDecoder("tm3", common.NewRawDecoder)
+
 }

@@ -22,15 +22,15 @@ type Decoder struct {
 	audio        []byte
 }
 
-func NewDefaultDecoder(data []byte) *Decoder {
+func NewDefaultDecoder(data []byte) common.Decoder {
 	return &Decoder{file: data, mask: getDefaultMask()}
 }
 
-func NewMflac256Decoder(data []byte) *Decoder {
+func NewMflac256Decoder(data []byte) common.Decoder {
 	return &Decoder{file: data, maskDetector: detectMflac256Mask, audioExt: "flac"}
 }
 
-func NewMgg256Decoder(data []byte) *Decoder {
+func NewMgg256Decoder(data []byte) common.Decoder {
 	return &Decoder{file: data, maskDetector: detectMgg256Mask, audioExt: "ogg"}
 }
 
@@ -93,4 +93,26 @@ func (d Decoder) GetAudioExt() string {
 
 func (d Decoder) GetMeta() common.Meta {
 	return nil
+}
+
+func init() {
+	common.RegisterDecoder("qmc3", NewDefaultDecoder)    //QQ Music Mp3
+	common.RegisterDecoder("qmc2", NewDefaultDecoder)    //QQ Music Ogg
+	common.RegisterDecoder("qmc0", NewDefaultDecoder)    //QQ Music Mp3
+	common.RegisterDecoder("qmcflac", NewDefaultDecoder) //QQ Music Flac
+	common.RegisterDecoder("qmcogg", NewDefaultDecoder)  //QQ Music Ogg
+	common.RegisterDecoder("tkm", NewDefaultDecoder)     //QQ Music Accompaniment M4a
+
+	common.RegisterDecoder("bkcmp3", NewDefaultDecoder)  //Moo Music Mp3
+	common.RegisterDecoder("bkcflac", NewDefaultDecoder) //Moo Music Flac
+
+	common.RegisterDecoder("666c6163", NewDefaultDecoder) //QQ Music Weiyun Flac
+	common.RegisterDecoder("6d7033", NewDefaultDecoder)   //QQ Music Weiyun Mp3
+	common.RegisterDecoder("6f6767", NewDefaultDecoder)   //QQ Music Weiyun Ogg
+	common.RegisterDecoder("6d3461", NewDefaultDecoder)   //QQ Music Weiyun M4a
+	common.RegisterDecoder("776176", NewDefaultDecoder)   //QQ Music Weiyun Wav
+
+	common.RegisterDecoder("mgg", NewMgg256Decoder)     //QQ Music Weiyun Wav
+	common.RegisterDecoder("mflac", NewMflac256Decoder) //QQ Music Weiyun Wav
+
 }

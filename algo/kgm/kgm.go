@@ -25,7 +25,7 @@ type Decoder struct {
 	audio []byte
 }
 
-func NewDecoder(file []byte) *Decoder {
+func NewDecoder(file []byte) common.Decoder {
 	return &Decoder{
 		file: file,
 	}
@@ -88,4 +88,11 @@ func (d *Decoder) Decode() error {
 		}
 	}
 	return nil
+}
+func init() {
+	// Kugou
+	common.RegisterDecoder("kgm", NewDecoder)
+	common.RegisterDecoder("kgma", NewDecoder)
+	// Viper
+	common.RegisterDecoder("vpr", NewDecoder)
 }
