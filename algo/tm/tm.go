@@ -6,10 +6,14 @@ import (
 	"github.com/umlock-music/cli/algo/common"
 )
 
-var magicHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}
+var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}
+var magicHeader = []byte{0x51, 0x51, 0x4D, 0x55} //0x15, 0x1D, 0x1A, 0x21
 
 type Decoder struct {
-	file []byte
+	file        []byte
+	audio       []byte
+	headerMatch bool
+	audioExt    string
 }
 
 func (d *Decoder) GetCoverImage() []byte {
@@ -17,11 +21,11 @@ func (d *Decoder) GetCoverImage() []byte {
 }
 
 func (d *Decoder) GetAudioData() []byte {
-	return d.file[8:]
+	return d.audio
 }
 
 func (d *Decoder) GetAudioExt() string {
-	return ""
+	return d.audioExt
 }
 
 func (d *Decoder) GetMeta() common.Meta {
@@ -36,12 +40,20 @@ func (d *Decoder) Validate() error {
 	if len(d.file) < 8 {
 		return errors.New("invalid file size")
 	}
-	if !bytes.Equal(magicHeader, d.file[:8]) {
+	if !bytes.Equal(magicHeader, d.file[:4]) {
 		return errors.New("not a valid tm file")
 	}
+	d.headerMatch = true
 	return nil
 }
 
 func (d *Decoder) Decode() error {
+	d.audio = d.file
+	if d.headerMatch {
+		for i := 0; i < 8; i++ {
+			d.audio[i] = replaceHeader[i]
+		}
+		d.audioExt = "m4a"
+	}
 	return nil
 }
