@@ -39,9 +39,9 @@ func DecoderFuncWithExt(ext string) NewDecoderFunc {
 	}
 }
 func init() {
-	RegisterDecoder("mp3", DecoderFuncWithExt("mp3"))
+	/*RegisterDecoder("mp3", DecoderFuncWithExt("mp3"))
 	RegisterDecoder("flac", DecoderFuncWithExt("flac"))
 	RegisterDecoder("wav", DecoderFuncWithExt("wav"))
 	RegisterDecoder("ogg", DecoderFuncWithExt("ogg"))
-	RegisterDecoder("m4a", DecoderFuncWithExt("m4a"))
+	RegisterDecoder("m4a", DecoderFuncWithExt("m4a"))*/
 }
