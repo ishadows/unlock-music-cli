@@ -1,5 +1,6 @@
 # Unlock Music Project - CLI Edition
 Original: Web Edition https://github.com/ix64/unlock-music
+- [Release Download](https://github.com/unlock-music/cli/releases/latest)
 
 ## Features
 - [x] All Algorithm Supported By `ix64/unlock-music`
