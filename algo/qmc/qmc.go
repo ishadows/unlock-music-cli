@@ -104,9 +104,14 @@ func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 
 //goland:noinspection SpellCheckingInspection
 func init() {
-	common.RegisterDecoder("qmc3", DecoderFuncWithExt("mp3"))     //QQ Music Mp3
-	common.RegisterDecoder("qmc2", DecoderFuncWithExt("ogg"))     //QQ Music Ogg
-	common.RegisterDecoder("qmc0", DecoderFuncWithExt("mp3"))     //QQ Music Mp3
+	common.RegisterDecoder("qmc0", DecoderFuncWithExt("mp3")) //QQ Music Mp3
+	common.RegisterDecoder("qmc3", DecoderFuncWithExt("mp3")) //QQ Music Mp3
+
+	common.RegisterDecoder("qmc2", DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc4", DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc6", DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc8", DecoderFuncWithExt("m4a")) //QQ Music M4A
+
 	common.RegisterDecoder("qmcflac", DecoderFuncWithExt("flac")) //QQ Music Flac
 	common.RegisterDecoder("qmcogg", DecoderFuncWithExt("ogg"))   //QQ Music Ogg
 	common.RegisterDecoder("tkm", DecoderFuncWithExt("m4a"))      //QQ Music Accompaniment M4a
@@ -120,7 +125,6 @@ func init() {
 	common.RegisterDecoder("6d3461", DecoderFuncWithExt("m4a"))    //QQ Music Weiyun M4a
 	common.RegisterDecoder("776176", DecoderFuncWithExt("wav"))    //QQ Music Weiyun Wav
 
-	common.RegisterDecoder("mgg", NewMgg256Decoder)     //QQ Music Weiyun Wav
-	common.RegisterDecoder("mflac", NewMflac256Decoder) //QQ Music Weiyun Wav
-
+	common.RegisterDecoder("mgg", NewMgg256Decoder)     //QQ Music New Ogg
+	common.RegisterDecoder("mflac", NewMflac256Decoder) //QQ Music New Flac
 }
