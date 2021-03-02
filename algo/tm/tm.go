@@ -3,7 +3,7 @@ package tm
 import (
 	"bytes"
 	"errors"
-	"github.com/umlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/algo/common"
 )
 
 var replaceHeader = []byte{0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70}

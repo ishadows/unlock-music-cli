@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/umlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/algo/common"
 	"strconv"
 	"strings"
 	"unicode"

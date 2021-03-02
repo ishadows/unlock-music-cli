@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/umlock-music/cli/algo/common"
-	"github.com/umlock-music/cli/internal/logging"
+	"github.com/unlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/internal/logging"
 )
 
 var (

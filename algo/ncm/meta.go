@@ -1,7 +1,7 @@
 package ncm
 
 import (
-	"github.com/umlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/algo/common"
 	"strings"
 )
 

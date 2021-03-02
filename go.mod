@@ -1,4 +1,4 @@
-module github.com/umlock-music/cli
+module github.com/unlock-music/cli
 
 go 1.16
 

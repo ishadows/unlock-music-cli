@@ -4,7 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"github.com/ulikunitz/xz"
-	"github.com/umlock-music/cli/internal/logging"
+	"github.com/unlock-music/cli/internal/logging"
 	"go.uber.org/zap"
 	"io/ioutil"
 )

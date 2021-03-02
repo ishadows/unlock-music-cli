@@ -3,8 +3,8 @@ package xm
 import (
 	"bytes"
 	"errors"
-	"github.com/umlock-music/cli/algo/common"
-	"github.com/umlock-music/cli/internal/logging"
+	"github.com/unlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/internal/logging"
 	"go.uber.org/zap"
 )
 

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"github.com/umlock-music/cli/algo/common"
+	"github.com/unlock-music/cli/algo/common"
 )
 
 var (
