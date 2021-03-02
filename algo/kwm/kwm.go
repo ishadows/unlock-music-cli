@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/unlock-music/cli/algo/common"
 	"strconv"
 	"strings"
@@ -100,7 +99,6 @@ func (d *Decoder) Decode() error {
 
 	d.audio = d.file[1024:]
 	dataLen := len(d.audio)
-	spew.Dump(d.audio[:1024])
 	for i := 0; i < dataLen; i++ {
 		d.audio[i] ^= d.mask[i&0x1F] //equals: [i % 32]
 	}

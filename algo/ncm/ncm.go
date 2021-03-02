@@ -57,10 +57,6 @@ func (d *Decoder) Validate() error {
 	if !bytes.Equal(magicHeader, d.file[:len(magicHeader)]) {
 		return errors.New("ncm magic header not match")
 	}
-
-	/*if status.IsDebug {
-		logging.Log().Info("the unknown field of the header is: \n" + spew.Sdump(d.file[8:10]))
-	}*/
 	d.offsetKey = 8 + 2
 	return nil
 }
@@ -158,15 +154,6 @@ func (d *Decoder) readCoverData() error {
 
 	coverLenStart := d.offsetCover + 5 + 4
 	bCoverLen := d.file[coverLenStart : coverLenStart+4]
-
-	/*if status.IsDebug {
-		logging.Log().Info("the unknown field of the cover is: \n" +
-			spew.Sdump(d.file[d.offsetCover:d.offsetCover+5]))
-		coverLen2 := d.file[d.offsetCover+5 : d.offsetCover+5+4] // it seems that always the same
-		if !bytes.Equal(coverLen2, bCoverLen) {
-			logging.Log().Warn("special file found! 2 cover length filed no the same!")
-		}
-	}*/
 
 	iCoverLen := binary.LittleEndian.Uint32(bCoverLen)
 	d.offsetAudio = coverLenStart + 4 + iCoverLen
