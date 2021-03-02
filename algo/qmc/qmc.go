@@ -22,11 +22,6 @@ type Decoder struct {
 	audio        []byte
 }
 
-//goland:noinspection GoUnusedExportedFunction
-func NewDefaultDecoder(data []byte) common.Decoder {
-	return &Decoder{file: data, mask: getDefaultMask()}
-}
-
 func NewMflac256Decoder(data []byte) common.Decoder {
 	return &Decoder{file: data, maskDetector: detectMflac256Mask, audioExt: "flac"}
 }
@@ -98,7 +93,7 @@ func (d Decoder) GetMeta() common.Meta {
 
 func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 	return func(file []byte) common.Decoder {
-		return &Decoder{file: file, audioExt: ext}
+		return &Decoder{file: file, audioExt: ext, mask: getDefaultMask()}
 	}
 }
 
