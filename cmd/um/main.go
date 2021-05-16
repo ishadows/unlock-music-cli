@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-var AppVersion = "0.0.3"
+var AppVersion = "0.0.4"
 
 func main() {
 	app := cli.App{
@@ -31,9 +31,9 @@ func main() {
 		},
 
 		Action:          appMain,
-		Copyright:       "Copyright (c) 2020 Unlock Music https://github.com/unlock-music/cli/blob/master/LICENSE",
+		Copyright:       "Copyright (c) 2020 - 2021 Unlock Music https://github.com/unlock-music/cli/blob/master/LICENSE",
 		HideHelpCommand: true,
-		UsageText:       "um -i /path/to/input -o /path/to/output/dir",
+		UsageText:       "um [-o /path/to/output/dir] [-i] /path/to/input",
 	}
 	err := app.Run(os.Args)
 	if err != nil {
