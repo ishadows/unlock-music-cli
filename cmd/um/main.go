@@ -18,12 +18,14 @@ import (
 	"strings"
 )
 
+var AppVersion = "0.0.3"
+
 func main() {
 	app := cli.App{
 		Name:     "Unlock Music CLI",
 		HelpName: "um",
 		Usage:    "Unlock your encrypted music file https://github.com/unlock-music/cli",
-		Version:  "v0.0.1",
+		Version:  AppVersion,
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: true},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: true},

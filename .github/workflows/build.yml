@@ -22,11 +22,11 @@ jobs:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
         include:
           - os: ubuntu-latest
-            BIN_SUFFIX:
+            BIN_SUFFIX: ""
           - os: macos-latest
-            BIN_SUFFIX:
+            BIN_SUFFIX: ""
           - os: windows-latest
-            BIN_SUFFIX: .exe
+            BIN_SUFFIX: ".exe"
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -38,12 +38,14 @@ jobs:
 
       - name: Setup vars
         id: vars
-        run: echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+        run: |
+          echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+          echo "::set-output name=git_tag::$(git describe --tags)"
 
       - name: Build
         env:
           CGO_ENABLED: 0
-        run: go build -trimpath -ldflags="-w -s" -v -o um-${{ runner.os }}${{ matrix.BIN_SUFFIX }} ./cmd/um
+        run: go build -trimpath -ldflags="-w -s -X main.AppVersion=${{ steps.vars.outputs.git_tag }}" -v -o um-${{ runner.os }}${{ matrix.BIN_SUFFIX }} ./cmd/um
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
