@@ -6,6 +6,7 @@ on:
       - "**/*.go"
       - "go.mod"
       - "go.sum"
+      - ".github/workflows/*.yml"
   pull_request:
     branches: [ master ]
     types: [ opened, synchronize, reopened ]
