@@ -12,7 +12,6 @@ import (
 	"github.com/unlock-music/cli/internal/logging"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,9 +26,10 @@ func main() {
 		Usage:    "Unlock your encrypted music file https://github.com/unlock-music/cli",
 		Version:  AppVersion,
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: true},
-			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: true},
+			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
+			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
 		},
+
 		Action:          appMain,
 		Copyright:       "Copyright (c) 2020 Unlock Music https://github.com/unlock-music/cli/blob/master/LICENSE",
 		HideHelpCommand: true,
@@ -37,13 +37,25 @@ func main() {
 	}
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		logging.Log().Fatal("run app failed", zap.Error(err))
 	}
 }
 
 func appMain(c *cli.Context) error {
 	input := c.String("input")
+	if input == "" && c.Args().Present() {
+		input = c.Args().Get(c.Args().Len() - 1)
+	}
+
 	output := c.String("output")
+	if output == "" {
+		var err error
+		output, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
 	inputStat, err := os.Stat(input)
 	if err != nil {
 		return err
