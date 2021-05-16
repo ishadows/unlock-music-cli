@@ -40,7 +40,7 @@ func (d *Decoder) GetAudioData() []byte {
 }
 
 func (d *Decoder) GetAudioExt() string {
-	return d.outputExt
+	return "." + d.outputExt
 }
 
 func (d *Decoder) GetMeta() common.Meta {

@@ -25,7 +25,10 @@ func (d *Decoder) GetAudioData() []byte {
 }
 
 func (d *Decoder) GetAudioExt() string {
-	return d.audioExt
+	if d.audioExt != "" {
+		return "." + d.audioExt
+	}
+	return ""
 }
 
 func (d *Decoder) GetMeta() common.Meta {

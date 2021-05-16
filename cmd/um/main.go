@@ -119,7 +119,7 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 
 	outExt := dec.GetAudioExt()
 	if outExt == "" {
-		outExt = "mp3"
+		outExt = ".mp3"
 	}
 	filenameOnly := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 

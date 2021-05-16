@@ -201,7 +201,9 @@ func (d *Decoder) Decode() error {
 
 func (d Decoder) GetAudioExt() string {
 	if d.meta != nil {
-		return d.meta.GetFormat()
+		if format := d.meta.GetFormat(); format != "" {
+			return "." + d.meta.GetFormat()
+		}
 	}
 	return ""
 }

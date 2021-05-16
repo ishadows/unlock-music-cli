@@ -27,7 +27,7 @@ func (d RawDecoder) GetAudioData() []byte {
 }
 
 func (d RawDecoder) GetAudioExt() string {
-	return d.audioExt
+	return "." + d.audioExt
 }
 
 func (d RawDecoder) GetMeta() Meta {
