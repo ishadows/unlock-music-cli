@@ -3,6 +3,7 @@ package qmc
 import (
 	"bytes"
 	"errors"
+	"github.com/unlock-music/cli/algo/common"
 	"github.com/unlock-music/cli/internal/logging"
 	"go.uber.org/zap"
 )
@@ -116,7 +117,7 @@ func detectMflac256Mask(input []byte) (*Key256Mask, error) {
 		if err != nil {
 			continue
 		}
-		if bytes.Equal(headerFlac, q.Decrypt(input[:len(headerFlac)])) {
+		if common.SnifferFLAC(q.Decrypt(input[:4])) {
 			rtErr = nil
 			break
 		}
@@ -164,7 +165,7 @@ func detectMgg256Mask(input []byte) (*Key256Mask, error) {
 	if err != nil {
 		return nil, err
 	}
-	if bytes.Equal(headerOgg, q.Decrypt(input[:len(headerOgg)])) {
+	if common.SnifferOGG(q.Decrypt(input[:4])) {
 		return q, nil
 	}
 	return nil, ErrDetectMggMask

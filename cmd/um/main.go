@@ -117,14 +117,19 @@ func tryDecFile(inputFile string, outputDir string, allDec []common.NewDecoderFu
 		return errors.New("failed while decoding: " + err.Error())
 	}
 
+	outData := dec.GetAudioData()
 	outExt := dec.GetAudioExt()
 	if outExt == "" {
-		outExt = ".mp3"
+		if ext, ok := common.SniffAll(outData); ok {
+			outExt = ext
+		} else {
+			outExt = ".mp3"
+		}
 	}
 	filenameOnly := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
 
-	outPath := filepath.Join(outputDir, filenameOnly+"."+outExt)
-	err = os.WriteFile(outPath, dec.GetAudioData(), 0644)
+	outPath := filepath.Join(outputDir, filenameOnly+outExt)
+	err = os.WriteFile(outPath, outData, 0644)
 	if err != nil {
 		return err
 	}
