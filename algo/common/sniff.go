@@ -5,12 +5,13 @@ import "bytes"
 type Sniffer func(header []byte) bool
 
 var snifferRegistry = map[string]Sniffer{
-	".m4a":  SnifferM4A,
-	".ogg":  SnifferOGG,
+	".mp3":  SnifferMP3,
 	".flac": SnifferFLAC,
+	".ogg":  SnifferOGG,
+	".m4a":  SnifferM4A,
 	".wav":  SnifferWAV,
 	".wma":  SnifferWMA,
-	".mp3":  SnifferMP3,
+	".aac":  SnifferAAC,
 }
 
 func SniffAll(header []byte) (string, bool) {
@@ -41,4 +42,7 @@ func SnifferWAV(header []byte) bool {
 }
 func SnifferWMA(header []byte) bool {
 	return bytes.HasPrefix(header, []byte("\x30\x26\xb2\x75\x8e\x66\xcf\x11\xa6\xd9\x00\xaa\x00\x62\xce\x6c"))
+}
+func SnifferAAC(header []byte) bool {
+	return bytes.HasPrefix(header, []byte{0xFF, 0xF1})
 }

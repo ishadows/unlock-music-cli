@@ -73,7 +73,7 @@ func init() {
 	common.RegisterDecoder("tm2", DecoderFuncWithExt("m4a"))
 	common.RegisterDecoder("tm6", DecoderFuncWithExt("m4a"))
 	// QQ Music IOS Mp3
-	common.RegisterDecoder("tm0", common.DecoderFuncWithExt("mp3"))
-	common.RegisterDecoder("tm3", common.DecoderFuncWithExt("mp3"))
+	common.RegisterDecoder("tm0", common.NewRawDecoder)
+	common.RegisterDecoder("tm3", common.NewRawDecoder)
 
 }
