@@ -41,7 +41,7 @@ var maskV2 []byte
 var fullMaskLen int
 var initMaskOK = false
 
-//todo: 根据需求解压Mask大小
+//todo: decompress mask on demand
 func initMask() {
 	if initMaskOK {
 		return

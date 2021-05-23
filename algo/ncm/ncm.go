@@ -61,7 +61,6 @@ func (d *Decoder) Validate() error {
 	return nil
 }
 
-//todo: 读取前进行检查长度，防止越界
 func (d *Decoder) readKeyData() error {
 	if d.offsetKey == 0 || d.offsetKey+4 > d.fileLen {
 		return errors.New("invalid cover file offset")

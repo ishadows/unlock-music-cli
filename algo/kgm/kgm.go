@@ -40,7 +40,7 @@ func (d Decoder) GetAudioData() []byte {
 }
 
 func (d Decoder) GetAudioExt() string {
-	return ""
+	return "" // use sniffer
 }
 
 func (d Decoder) GetMeta() common.Meta {
@@ -58,9 +58,8 @@ func (d *Decoder) Validate() error {
 
 	d.key = d.file[0x1c:0x2c]
 	d.key = append(d.key, 0x00)
-	_ = d.file[0x2c:0x3c] //key2
+	_ = d.file[0x2c:0x3c] //todo: key2
 	return nil
-
 }
 
 func (d *Decoder) Decode() error {
@@ -69,7 +68,8 @@ func (d *Decoder) Decode() error {
 	lenData := len(dataEncrypted)
 	initMask()
 	if fullMaskLen < lenData {
-		logging.Log().Warn("文件过大，处理后的音频不完整,请向我们报告此文件的信息")
+		logging.Log().Warn("The file is too large and the processed audio is incomplete, " +
+			"please report to us about this file at https://github.com/unlock-music/cli/issues")
 		lenData = fullMaskLen
 	}
 	d.audio = make([]byte, lenData)
