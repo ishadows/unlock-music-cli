@@ -12,6 +12,7 @@ var snifferRegistry = map[string]Sniffer{
 	".wav":  SnifferWAV,
 	".wma":  SnifferWMA,
 	".aac":  SnifferAAC,
+	".dff":  SnifferDFF,
 }
 
 func SniffAll(header []byte) (string, bool) {
@@ -45,4 +46,10 @@ func SnifferWMA(header []byte) bool {
 }
 func SnifferAAC(header []byte) bool {
 	return bytes.HasPrefix(header, []byte{0xFF, 0xF1})
+}
+
+// SnifferDFF sniff a DSDIFF format
+// reference to: https://www.sonicstudio.com/pdf/dsd/DSDIFF_1.5_Spec.pdf
+func SnifferDFF(header []byte) bool {
+	return bytes.HasPrefix(header, []byte("FRM8"))
 }
