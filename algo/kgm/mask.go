@@ -6,7 +6,7 @@ import (
 	"github.com/ulikunitz/xz"
 	"github.com/unlock-music/cli/internal/logging"
 	"go.uber.org/zap"
-	"io/ioutil"
+	"io"
 )
 
 var maskDiffVpr = []byte{
@@ -50,7 +50,7 @@ func initMask() {
 	if err != nil {
 		logging.Log().Fatal("load kgm mask failed", zap.Error(err))
 	}
-	maskV2, err = ioutil.ReadAll(maskReader)
+	maskV2, err = io.ReadAll(maskReader)
 	if err != nil {
 		logging.Log().Fatal("load kgm mask failed", zap.Error(err))
 	}

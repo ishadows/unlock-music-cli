@@ -39,7 +39,7 @@ func NewKey256FromMask44(mask44 []byte) (*Key256Mask, error) {
 	return q, nil
 }
 
-func (q *Key256Mask) getMatrix44() (mask44 []byte, err error) {
+func (q *Key256Mask) GetMatrix44() ([]byte, error) {
 	if len(q.matrix) != 128 {
 		return nil, ErrMaskLength128
 	}
@@ -53,7 +53,7 @@ func (q *Key256Mask) getMatrix44() (mask44 []byte, err error) {
 					return nil, ErrMaskDecode
 				}
 			}
-			q.matrix[idx44] = q.matrix[it256[0]]
+			matrix44[idx44] = q.matrix[it256[0]]
 			idx44++
 		}
 	}

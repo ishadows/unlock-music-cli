@@ -75,12 +75,8 @@ func (d *Decoder) Decode() error {
 	d.audio = make([]byte, lenData)
 
 	for i := 0; i < lenData; i++ {
-		med8 := d.key[i%17] ^ dataEncrypted[i]
-		med8 ^= (med8 & 0xf) << 4
-
-		msk8 := maskV2PreDef[i%272] ^ maskV2[i>>4]
-		msk8 ^= (msk8 & 0xf) << 4
-		d.audio[i] = med8 ^ msk8
+		med8 := dataEncrypted[i] ^ d.key[i%17] ^ maskV2PreDef[i%(16*17)] ^ maskV2[i>>4]
+		d.audio[i] = med8 ^ (med8&0xf)<<4
 	}
 	if d.isVpr {
 		for i := 0; i < lenData; i++ {
