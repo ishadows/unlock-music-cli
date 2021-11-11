@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/unlock-music/cli/algo/common"
 	_ "github.com/unlock-music/cli/algo/kgm"
 	_ "github.com/unlock-music/cli/algo/kwm"
@@ -14,17 +15,18 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
-var AppVersion = "0.0.4"
+var AppVersion = "v0.0.6"
 
 func main() {
 	app := cli.App{
 		Name:     "Unlock Music CLI",
 		HelpName: "um",
 		Usage:    "Unlock your encrypted music file https://github.com/unlock-music/cli",
-		Version:  AppVersion,
+		Version:  fmt.Sprintf("%s (%s,%s/%s)", AppVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
@@ -42,10 +44,20 @@ func main() {
 	}
 }
 
-func appMain(c *cli.Context) error {
+func appMain(c *cli.Context) (err error) {
 	input := c.String("input")
-	if input == "" && c.Args().Present() {
-		input = c.Args().Get(c.Args().Len() - 1)
+	if input == "" {
+		switch c.Args().Len() {
+		case 0:
+			input, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		case 1:
+			input = c.Args().Get(0)
+		default:
+			return errors.New("please specify input file (or directory)")
+		}
 	}
 
 	output := c.String("output")
@@ -54,6 +66,9 @@ func appMain(c *cli.Context) error {
 		output, err = os.Getwd()
 		if err != nil {
 			return err
+		}
+		if input == output {
+			return errors.New("input and output path are same")
 		}
 	}
 
