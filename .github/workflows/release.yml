@@ -6,7 +6,7 @@ on:
       - "v*"
 
 jobs:
-  create-release:
+  create_release:
     runs-on: ubuntu-latest
     steps:
       - name: Get current time
@@ -22,8 +22,11 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: "Build ${{ steps.date.outputs.date }}"
           draft: true
-
+    outputs:
+      upload_url: "${{ steps.release.outputs.upload_url }}"
   build:
+    needs:
+      - create_release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,6 +77,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ jobs.create-release.steps.release.outputs.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: um
           asset_name: um-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.BIN_SUFFIX }}
