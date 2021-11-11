@@ -28,12 +28,13 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
+			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
 		},
 
 		Action:          appMain,
 		Copyright:       "Copyright (c) 2020 - 2021 Unlock Music https://github.com/unlock-music/cli/blob/master/LICENSE",
 		HideHelpCommand: true,
-		UsageText:       "um [-o /path/to/output/dir] [-i] /path/to/input",
+		UsageText:       "um [-o /path/to/output/dir] [--extra-flags] [-i] /path/to/input",
 	}
 	err := app.Run(os.Args)
 	if err != nil {
@@ -56,6 +57,8 @@ func appMain(c *cli.Context) error {
 		}
 	}
 
+	skipNoop := c.Bool("skip-noop")
+
 	inputStat, err := os.Stat(input)
 	if err != nil {
 		return err
@@ -74,9 +77,9 @@ func appMain(c *cli.Context) error {
 	}
 
 	if inputStat.IsDir() {
-		return dealDirectory(input, output)
+		return dealDirectory(input, output, skipNoop)
 	} else {
-		allDec := common.GetDecoder(inputStat.Name())
+		allDec := common.GetDecoder(inputStat.Name(), skipNoop)
 		if len(allDec) == 0 {
 			logging.Log().Fatal("skipping while no suitable decoder")
 		}
@@ -84,7 +87,7 @@ func appMain(c *cli.Context) error {
 	}
 
 }
-func dealDirectory(inputDir string, outputDir string) error {
+func dealDirectory(inputDir string, outputDir string, skipNoop bool) error {
 	items, err := os.ReadDir(inputDir)
 	if err != nil {
 		return err
@@ -93,7 +96,7 @@ func dealDirectory(inputDir string, outputDir string) error {
 		if item.IsDir() {
 			continue
 		}
-		allDec := common.GetDecoder(item.Name())
+		allDec := common.GetDecoder(item.Name(), skipNoop)
 		if len(allDec) == 0 {
 			logging.Log().Info("skipping while no suitable decoder", zap.String("file", item.Name()))
 			continue

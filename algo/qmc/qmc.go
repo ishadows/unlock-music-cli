@@ -102,27 +102,27 @@ func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 
 //goland:noinspection SpellCheckingInspection
 func init() {
-	common.RegisterDecoder("qmc0", DecoderFuncWithExt("mp3")) //QQ Music Mp3
-	common.RegisterDecoder("qmc3", DecoderFuncWithExt("mp3")) //QQ Music Mp3
+	common.RegisterDecoder("qmc0", false, DecoderFuncWithExt("mp3")) //QQ Music Mp3
+	common.RegisterDecoder("qmc3", false, DecoderFuncWithExt("mp3")) //QQ Music Mp3
 
-	common.RegisterDecoder("qmc2", DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc4", DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc6", DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc8", DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc2", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc4", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc6", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
+	common.RegisterDecoder("qmc8", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
 
-	common.RegisterDecoder("qmcflac", DecoderFuncWithExt("flac")) //QQ Music Flac
-	common.RegisterDecoder("qmcogg", DecoderFuncWithExt("ogg"))   //QQ Music Ogg
-	common.RegisterDecoder("tkm", DecoderFuncWithExt("m4a"))      //QQ Music Accompaniment M4a
+	common.RegisterDecoder("qmcflac", false, DecoderFuncWithExt("flac")) //QQ Music Flac
+	common.RegisterDecoder("qmcogg", false, DecoderFuncWithExt("ogg"))   //QQ Music Ogg
+	common.RegisterDecoder("tkm", false, DecoderFuncWithExt("m4a"))      //QQ Music Accompaniment M4a
 
-	common.RegisterDecoder("bkcmp3", DecoderFuncWithExt("mp3"))   //Moo Music Mp3
-	common.RegisterDecoder("bkcflac", DecoderFuncWithExt("flac")) //Moo Music Flac
+	common.RegisterDecoder("bkcmp3", false, DecoderFuncWithExt("mp3"))   //Moo Music Mp3
+	common.RegisterDecoder("bkcflac", false, DecoderFuncWithExt("flac")) //Moo Music Flac
 
-	common.RegisterDecoder("666c6163", DecoderFuncWithExt("flac")) //QQ Music Weiyun Flac
-	common.RegisterDecoder("6d7033", DecoderFuncWithExt("mp3"))    //QQ Music Weiyun Mp3
-	common.RegisterDecoder("6f6767", DecoderFuncWithExt("ogg"))    //QQ Music Weiyun Ogg
-	common.RegisterDecoder("6d3461", DecoderFuncWithExt("m4a"))    //QQ Music Weiyun M4a
-	common.RegisterDecoder("776176", DecoderFuncWithExt("wav"))    //QQ Music Weiyun Wav
+	common.RegisterDecoder("666c6163", false, DecoderFuncWithExt("flac")) //QQ Music Weiyun Flac
+	common.RegisterDecoder("6d7033", false, DecoderFuncWithExt("mp3"))    //QQ Music Weiyun Mp3
+	common.RegisterDecoder("6f6767", false, DecoderFuncWithExt("ogg"))    //QQ Music Weiyun Ogg
+	common.RegisterDecoder("6d3461", false, DecoderFuncWithExt("m4a"))    //QQ Music Weiyun M4a
+	common.RegisterDecoder("776176", false, DecoderFuncWithExt("wav"))    //QQ Music Weiyun Wav
 
-	common.RegisterDecoder("mgg", NewMgg256Decoder)     //QQ Music New Ogg
-	common.RegisterDecoder("mflac", NewMflac256Decoder) //QQ Music New Flac
+	common.RegisterDecoder("mgg", false, NewMgg256Decoder)     //QQ Music New Ogg
+	common.RegisterDecoder("mflac", false, NewMflac256Decoder) //QQ Music New Flac
 }

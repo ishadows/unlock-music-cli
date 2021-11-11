@@ -45,11 +45,11 @@ func (d RawDecoder) GetMeta() Meta {
 }
 
 func init() {
-	RegisterDecoder("mp3", NewRawDecoder)
-	RegisterDecoder("flac", NewRawDecoder)
-	RegisterDecoder("ogg", NewRawDecoder)
-	RegisterDecoder("m4a", NewRawDecoder)
-	RegisterDecoder("wav", NewRawDecoder)
-	RegisterDecoder("wma", NewRawDecoder)
-	RegisterDecoder("aac", NewRawDecoder)
+	RegisterDecoder("mp3", true, NewRawDecoder)
+	RegisterDecoder("flac", true, NewRawDecoder)
+	RegisterDecoder("ogg", true, NewRawDecoder)
+	RegisterDecoder("m4a", true, NewRawDecoder)
+	RegisterDecoder("wav", true, NewRawDecoder)
+	RegisterDecoder("wma", true, NewRawDecoder)
+	RegisterDecoder("aac", true, NewRawDecoder)
 }

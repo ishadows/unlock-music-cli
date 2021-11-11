@@ -70,10 +70,10 @@ func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 
 func init() {
 	// QQ Music IOS M4a
-	common.RegisterDecoder("tm2", DecoderFuncWithExt("m4a"))
-	common.RegisterDecoder("tm6", DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("tm2", false, DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("tm6", false, DecoderFuncWithExt("m4a"))
 	// QQ Music IOS Mp3
-	common.RegisterDecoder("tm0", common.NewRawDecoder)
-	common.RegisterDecoder("tm3", common.NewRawDecoder)
+	common.RegisterDecoder("tm0", false, common.NewRawDecoder)
+	common.RegisterDecoder("tm3", false, common.NewRawDecoder)
 
 }

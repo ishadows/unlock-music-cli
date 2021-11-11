@@ -97,10 +97,10 @@ func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 
 func init() {
 	// Xiami Wav/M4a/Mp3/Flac
-	common.RegisterDecoder("xm", NewDecoder)
+	common.RegisterDecoder("xm", false, NewDecoder)
 	// Xiami Typed Format
-	common.RegisterDecoder("wav", DecoderFuncWithExt("wav"))
-	common.RegisterDecoder("mp3", DecoderFuncWithExt("mp3"))
-	common.RegisterDecoder("flac", DecoderFuncWithExt("flac"))
-	common.RegisterDecoder("m4a", DecoderFuncWithExt("m4a"))
+	common.RegisterDecoder("wav", false, DecoderFuncWithExt("wav"))
+	common.RegisterDecoder("mp3", false, DecoderFuncWithExt("mp3"))
+	common.RegisterDecoder("flac", false, DecoderFuncWithExt("flac"))
+	common.RegisterDecoder("m4a", false, DecoderFuncWithExt("m4a"))
 }

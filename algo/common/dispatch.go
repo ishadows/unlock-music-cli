@@ -7,12 +7,24 @@ import (
 
 type NewDecoderFunc func([]byte) Decoder
 
-var decoderRegistry = make(map[string][]NewDecoderFunc)
-
-func RegisterDecoder(ext string, dispatchFunc NewDecoderFunc) {
-	decoderRegistry[ext] = append(decoderRegistry[ext], dispatchFunc)
+type decoderItem struct {
+	noop    bool
+	decoder NewDecoderFunc
 }
-func GetDecoder(filename string) []NewDecoderFunc {
+
+var decoderRegistry = make(map[string][]decoderItem)
+
+func RegisterDecoder(ext string, noop bool, dispatchFunc NewDecoderFunc) {
+	decoderRegistry[ext] = append(decoderRegistry[ext],
+		decoderItem{noop: noop, decoder: dispatchFunc})
+}
+func GetDecoder(filename string, skipNoop bool) (rs []NewDecoderFunc) {
 	ext := strings.ToLower(strings.TrimLeft(filepath.Ext(filename), "."))
-	return decoderRegistry[ext]
+	for _, dec := range decoderRegistry[ext] {
+		if skipNoop && dec.noop {
+			continue
+		}
+		rs = append(rs, dec.decoder)
+	}
+	return
 }

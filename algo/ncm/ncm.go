@@ -246,5 +246,5 @@ func (d Decoder) GetMeta() common.Meta {
 
 func init() {
 	// Netease Mp3/Flac
-	common.RegisterDecoder("ncm", NewDecoder)
+	common.RegisterDecoder("ncm", false, NewDecoder)
 }

@@ -124,6 +124,6 @@ func padOrTruncate(raw string, length int) string {
 
 func init() {
 	// Kuwo Mp3/Flac
-	common.RegisterDecoder("kwm", NewDecoder)
-	common.RegisterDecoder("kwm", common.NewRawDecoder)
+	common.RegisterDecoder("kwm", false, NewDecoder)
+	common.RegisterDecoder("kwm", false, common.NewRawDecoder)
 }

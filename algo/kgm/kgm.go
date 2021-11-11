@@ -87,8 +87,8 @@ func (d *Decoder) Decode() error {
 }
 func init() {
 	// Kugou
-	common.RegisterDecoder("kgm", NewDecoder)
-	common.RegisterDecoder("kgma", NewDecoder)
+	common.RegisterDecoder("kgm", false, NewDecoder)
+	common.RegisterDecoder("kgma", false, NewDecoder)
 	// Viper
-	common.RegisterDecoder("vpr", NewDecoder)
+	common.RegisterDecoder("vpr", false, NewDecoder)
 }
