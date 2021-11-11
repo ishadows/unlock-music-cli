@@ -17,17 +17,23 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ windows-latest, ubuntu-latest, macos-latest ]
         include:
-          - os: ubuntu-latest
+          - target: "linux/amd64"
+            GOOS: "linux"
+            GOARCH: "amd64"
             BIN_SUFFIX: ""
-          - os: macos-latest
-            BIN_SUFFIX: ""
-          - os: windows-latest
+          - target: "windows/amd64"
+            GOOS: "windows"
+            GOARCH: "amd64"
             BIN_SUFFIX: ".exe"
+          - target: "darwin/amd64"
+            GOOS: "darwin"
+            GOARCH: "amd64"
+            BIN_SUFFIX: ""
+
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -47,11 +53,13 @@ jobs:
 
       - name: Build
         env:
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
           CGO_ENABLED: 0
-        run: go build -trimpath -ldflags="-w -s -X main.AppVersion=${{ steps.vars.outputs.git_tag }}" -v -o um-${{ runner.os }}${{ matrix.BIN_SUFFIX }} ./cmd/um
+        run: go build -v -trimpath -ldflags="-w -s -X main.AppVersion=${{ steps.vars.outputs.git_tag }}" -o um-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.BIN_SUFFIX }} ./cmd/um
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
-          name: um-${{ runner.os }}${{ matrix.BIN_SUFFIX }}
-          path: ./um-${{ runner.os }}${{ matrix.BIN_SUFFIX }}
+          name: um-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: ./um-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.BIN_SUFFIX }}
