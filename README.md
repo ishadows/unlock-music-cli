@@ -13,7 +13,7 @@ Original: Web Edition https://github.com/ix64/unlock-music
 
 ## Hou to Build
 
-- Requirements: **Golang 1.16**
+- Requirements: **Golang 1.17**
 
 1. Clone this repo `git clone https://github.com/unlock-music/cli && cd cli`
 2. Build the executable `go build ./cmd/um`
