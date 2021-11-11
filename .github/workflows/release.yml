@@ -80,3 +80,5 @@ jobs:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: um
           asset_name: um-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.BIN_SUFFIX }}
+          asset_content_type: application/octet-stream
+
