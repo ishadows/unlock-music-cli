@@ -1,6 +1,9 @@
 package common
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 type RawDecoder struct {
 	file     []byte
@@ -14,7 +17,7 @@ func NewRawDecoder(file []byte) Decoder {
 func (d *RawDecoder) Validate() error {
 	for ext, sniffer := range snifferRegistry {
 		if sniffer(d.file) {
-			d.audioExt = ext
+			d.audioExt = strings.ToLower(ext)
 			return nil
 		}
 	}

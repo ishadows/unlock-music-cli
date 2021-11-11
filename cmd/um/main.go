@@ -76,8 +76,7 @@ func appMain(c *cli.Context) error {
 	if inputStat.IsDir() {
 		return dealDirectory(input, output)
 	} else {
-		ext := strings.TrimLeft(filepath.Ext(inputStat.Name()), ".")
-		allDec := common.GetDecoder(ext)
+		allDec := common.GetDecoder(inputStat.Name())
 		if len(allDec) == 0 {
 			logging.Log().Fatal("skipping while no suitable decoder")
 		}
@@ -94,8 +93,7 @@ func dealDirectory(inputDir string, outputDir string) error {
 		if item.IsDir() {
 			continue
 		}
-		ext := strings.TrimLeft(filepath.Ext(item.Name()), ".")
-		allDec := common.GetDecoder(ext)
+		allDec := common.GetDecoder(item.Name())
 		if len(allDec) == 0 {
 			logging.Log().Info("skipping while no suitable decoder", zap.String("file", item.Name()))
 			continue
