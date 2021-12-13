@@ -3,6 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sort"
+	"strings"
+
+	"github.com/urfave/cli/v2"
+	"go.uber.org/zap"
+
 	"github.com/unlock-music/cli/algo/common"
 	_ "github.com/unlock-music/cli/algo/kgm"
 	_ "github.com/unlock-music/cli/algo/kwm"
@@ -11,12 +20,6 @@ import (
 	_ "github.com/unlock-music/cli/algo/tm"
 	_ "github.com/unlock-music/cli/algo/xm"
 	"github.com/unlock-music/cli/internal/logging"
-	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 var AppVersion = "v0.0.6"
@@ -31,6 +34,7 @@ func main() {
 			&cli.StringFlag{Name: "input", Aliases: []string{"i"}, Usage: "path to input file or dir", Required: false},
 			&cli.StringFlag{Name: "output", Aliases: []string{"o"}, Usage: "path to output dir", Required: false},
 			&cli.BoolFlag{Name: "skip-noop", Aliases: []string{"n"}, Usage: "skip noop decoder", Required: false, Value: true},
+			&cli.BoolFlag{Name: "supported-ext", Usage: "Show supported file extensions and exit", Required: false, Value: false},
 		},
 
 		Action:          appMain,
@@ -43,8 +47,21 @@ func main() {
 		logging.Log().Fatal("run app failed", zap.Error(err))
 	}
 }
-
+func printSupportedExtensions() {
+	exts := []string{}
+	for ext := range common.DecoderRegistry {
+		exts = append(exts, ext)
+	}
+	sort.Strings(exts)
+	for _, ext := range exts {
+		fmt.Printf("%s: %d\n", ext, len(common.DecoderRegistry[ext]))
+	}
+}
 func appMain(c *cli.Context) (err error) {
+	if c.Bool("supported-ext") {
+		printSupportedExtensions()
+		return nil
+	}
 	input := c.String("input")
 	if input == "" {
 		switch c.Args().Len() {

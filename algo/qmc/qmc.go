@@ -1,128 +1,263 @@
 package qmc
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
+	"strconv"
+	"strings"
+
 	"github.com/unlock-music/cli/algo/common"
 )
 
-var (
-	ErrQmcFileLength      = errors.New("invalid qmc file length")
-	ErrQmcKeyDecodeFailed = errors.New("base64 decode qmc key failed")
-	ErrQmcKeyLength       = errors.New("unexpected decoded qmc key length")
-)
-
 type Decoder struct {
-	file         []byte
-	maskDetector func(encodedData []byte) (*Key256Mask, error)
-	mask         *Key256Mask
-	audioExt     string
-	key          []byte
-	audio        []byte
+	r       io.ReadSeeker
+	fileExt string
+
+	audioLen   int
+	decodedKey []byte
+	cipher     streamCipher
+	offset     int
+
+	rawMetaExtra1 int
+	rawMetaExtra2 int
 }
 
-func NewMflac256Decoder(data []byte) common.Decoder {
-	return &Decoder{file: data, maskDetector: detectMflac256Mask, audioExt: "flac"}
+// Read implements io.Reader, offer the decrypted audio data.
+// Validate should call before Read to check if the file is valid.
+func (d *Decoder) Read(p []byte) (int, error) {
+	n := len(p)
+	if d.audioLen-d.offset <= 0 {
+		return 0, io.EOF
+	} else if d.audioLen-d.offset < n {
+		n = d.audioLen - d.offset
+	}
+	m, err := d.r.Read(p[:n])
+	if m == 0 {
+		return 0, err
+	}
+
+	d.cipher.Decrypt(p[:m], d.offset)
+	d.offset += m
+	return m, err
 }
 
-func NewMgg256Decoder(data []byte) common.Decoder {
-	return &Decoder{file: data, maskDetector: detectMgg256Mask, audioExt: "ogg"}
+func NewDecoder(r io.ReadSeeker) (*Decoder, error) {
+	d := &Decoder{r: r}
+	err := d.searchKey()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(d.decodedKey) > 300 {
+		d.cipher, err = NewRC4Cipher(d.decodedKey)
+		if err != nil {
+			return nil, err
+		}
+	} else if len(d.decodedKey) != 0 {
+		d.cipher, err = NewMapCipher(d.decodedKey)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		d.cipher = NewStaticCipher()
+	}
+
+	_, err = d.r.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
 }
 
 func (d *Decoder) Validate() error {
-	if nil != d.mask {
-		return nil
-	}
-	if nil != d.maskDetector {
-		if err := d.validateKey(); err != nil {
-			return err
-		}
-		var err error
-		d.mask, err = d.maskDetector(d.file)
+	buf := make([]byte, 16)
+	if _, err := io.ReadFull(d.r, buf); err != nil {
 		return err
 	}
-	return errors.New("no mask or mask detector found")
-}
-
-func (d *Decoder) validateKey() error {
-	lenData := len(d.file)
-	if lenData < 4 {
-		return ErrQmcFileLength
-	}
-
-	keyLen := binary.LittleEndian.Uint32(d.file[lenData-4:])
-	if lenData < int(keyLen+4) {
-		return ErrQmcFileLength
-	}
-	var err error
-	d.key, err = base64.StdEncoding.DecodeString(
-		string(d.file[lenData-4-int(keyLen) : lenData-4]))
+	_, err := d.r.Seek(0, io.SeekStart)
 	if err != nil {
-		return ErrQmcKeyDecodeFailed
+		return err
 	}
 
-	if len(d.key) != 272 {
-		return ErrQmcKeyLength
+	d.cipher.Decrypt(buf, 0)
+	fileExt, ok := common.SniffAll(buf)
+	if !ok {
+		return errors.New("detect file type failed")
 	}
-	d.file = d.file[:lenData-4-int(keyLen)]
-	return nil
-
-}
-
-func (d *Decoder) Decode() error {
-	d.audio = d.mask.Decrypt(d.file)
+	d.fileExt = fileExt
 	return nil
 }
 
-func (d Decoder) GetCoverImage() []byte {
+func (d Decoder) GetFileExt() string {
+	return d.fileExt
+}
+
+func (d *Decoder) searchKey() error {
+	fileSizeM4, err := d.r.Seek(-4, io.SeekEnd)
+	if err != nil {
+		return err
+	}
+	buf, err := io.ReadAll(io.LimitReader(d.r, 4))
+	if err != nil {
+		return err
+	}
+	if string(buf) == "QTag" {
+		if err := d.readRawMetaQTag(); err != nil {
+			return err
+		}
+	} else {
+		size := binary.LittleEndian.Uint32(buf)
+		if size < 0x300 && size != 0 {
+			return d.readRawKey(int64(size))
+		} else {
+			// try to use default static cipher
+			d.audioLen = int(fileSizeM4 + 4)
+			return nil
+		}
+	}
 	return nil
 }
 
-func (d Decoder) GetAudioData() []byte {
-	return d.audio
-}
-
-func (d Decoder) GetAudioExt() string {
-	if d.audioExt != "" {
-		return "." + d.audioExt
+func (d *Decoder) readRawKey(rawKeyLen int64) error {
+	audioLen, err := d.r.Seek(-(4 + rawKeyLen), io.SeekEnd)
+	if err != nil {
+		return err
 	}
-	return ""
-}
+	d.audioLen = int(audioLen)
 
-func (d Decoder) GetMeta() common.Meta {
+	rawKeyData, err := io.ReadAll(io.LimitReader(d.r, rawKeyLen))
+	if err != nil {
+		return err
+	}
+
+	d.decodedKey, err = DecryptKey(rawKeyData)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
-	return func(file []byte) common.Decoder {
-		return &Decoder{file: file, audioExt: ext, mask: getDefaultMask()}
+func (d *Decoder) readRawMetaQTag() error {
+	// get raw meta data len
+	if _, err := d.r.Seek(-8, io.SeekEnd); err != nil {
+		return err
 	}
+	buf, err := io.ReadAll(io.LimitReader(d.r, 4))
+	if err != nil {
+		return err
+	}
+	rawMetaLen := int64(binary.BigEndian.Uint32(buf))
+
+	// read raw meta data
+	audioLen, err := d.r.Seek(-(8 + rawMetaLen), io.SeekEnd)
+	if err != nil {
+		return err
+	}
+	d.audioLen = int(audioLen)
+	rawMetaData, err := io.ReadAll(io.LimitReader(d.r, rawMetaLen))
+	if err != nil {
+		return err
+	}
+
+	items := strings.Split(string(rawMetaData), ",")
+	if len(items) != 3 {
+		return errors.New("invalid raw meta data")
+	}
+
+	d.decodedKey, err = DecryptKey([]byte(items[0]))
+	if err != nil {
+		return err
+	}
+
+	d.rawMetaExtra1, err = strconv.Atoi(items[1])
+	if err != nil {
+		return err
+	}
+	d.rawMetaExtra2, err = strconv.Atoi(items[2])
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //goland:noinspection SpellCheckingInspection
 func init() {
-	common.RegisterDecoder("qmc0", false, DecoderFuncWithExt("mp3")) //QQ Music Mp3
-	common.RegisterDecoder("qmc3", false, DecoderFuncWithExt("mp3")) //QQ Music Mp3
+	supportedExts := []string{
+		"qmc0", "qmc3", //QQ Music MP3
+		"qmc2", "qmc4", "qmc6", "qmc8", //QQ Music M4A
+		"qmcflac", //QQ Music FLAC
+		"qmcogg",  //QQ Music OGG
 
-	common.RegisterDecoder("qmc2", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc4", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc6", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
-	common.RegisterDecoder("qmc8", false, DecoderFuncWithExt("m4a")) //QQ Music M4A
+		"tkm",     //QQ Music Accompaniment M4A
+		"bkcmp3",  //Moo Music Mp3
+		"bkcflac", //Moo Music Flac
 
-	common.RegisterDecoder("qmcflac", false, DecoderFuncWithExt("flac")) //QQ Music Flac
-	common.RegisterDecoder("qmcogg", false, DecoderFuncWithExt("ogg"))   //QQ Music Ogg
-	common.RegisterDecoder("tkm", false, DecoderFuncWithExt("m4a"))      //QQ Music Accompaniment M4a
+		"666c6163", //QQ Music Weiyun Flac
+		"6d7033",   //QQ Music Weiyun Mp3
+		"6f6767",   //QQ Music Weiyun Ogg
+		"6d3461",   //QQ Music Weiyun M4a
+		"776176",   //QQ Music Weiyun Wav
 
-	common.RegisterDecoder("bkcmp3", false, DecoderFuncWithExt("mp3"))   //Moo Music Mp3
-	common.RegisterDecoder("bkcflac", false, DecoderFuncWithExt("flac")) //Moo Music Flac
+		"mgg", "mgg1", //QQ Music New Ogg
+		"mflac", "mflac0", //QQ Music New Flac
+	}
+	for _, ext := range supportedExts {
+		common.RegisterDecoder(ext, false, newCompactDecoder)
+	}
+}
 
-	common.RegisterDecoder("666c6163", false, DecoderFuncWithExt("flac")) //QQ Music Weiyun Flac
-	common.RegisterDecoder("6d7033", false, DecoderFuncWithExt("mp3"))    //QQ Music Weiyun Mp3
-	common.RegisterDecoder("6f6767", false, DecoderFuncWithExt("ogg"))    //QQ Music Weiyun Ogg
-	common.RegisterDecoder("6d3461", false, DecoderFuncWithExt("m4a"))    //QQ Music Weiyun M4a
-	common.RegisterDecoder("776176", false, DecoderFuncWithExt("wav"))    //QQ Music Weiyun Wav
+type compactDecoder struct {
+	decoder   *Decoder
+	createErr error
+	buf       *bytes.Buffer
+}
 
-	common.RegisterDecoder("mgg", false, NewMgg256Decoder)     //QQ Music New Ogg
-	common.RegisterDecoder("mflac", false, NewMflac256Decoder) //QQ Music New Flac
+func newCompactDecoder(p []byte) common.Decoder {
+	r := bytes.NewReader(p)
+	d, err := NewDecoder(r)
+	c := compactDecoder{
+		decoder:   d,
+		createErr: err,
+	}
+	return &c
+}
+
+func (c *compactDecoder) Validate() error {
+	if c.createErr != nil {
+		return c.createErr
+	}
+	return c.decoder.Validate()
+}
+
+func (c *compactDecoder) Decode() error {
+	if c.createErr != nil {
+		return c.createErr
+	}
+	c.buf = bytes.NewBuffer(nil)
+	_, err := io.Copy(c.buf, c.decoder)
+	return err
+}
+
+func (c *compactDecoder) GetCoverImage() []byte {
+	return nil
+}
+
+func (c *compactDecoder) GetAudioData() []byte {
+	return c.buf.Bytes()
+}
+
+func (c *compactDecoder) GetAudioExt() string {
+	if c.createErr != nil {
+		return ""
+	}
+	return c.decoder.GetFileExt()
+}
+
+func (c *compactDecoder) GetMeta() common.Meta {
+	return nil
 }

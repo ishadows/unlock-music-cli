@@ -12,15 +12,15 @@ type decoderItem struct {
 	decoder NewDecoderFunc
 }
 
-var decoderRegistry = make(map[string][]decoderItem)
+var DecoderRegistry = make(map[string][]decoderItem)
 
 func RegisterDecoder(ext string, noop bool, dispatchFunc NewDecoderFunc) {
-	decoderRegistry[ext] = append(decoderRegistry[ext],
+	DecoderRegistry[ext] = append(DecoderRegistry[ext],
 		decoderItem{noop: noop, decoder: dispatchFunc})
 }
 func GetDecoder(filename string, skipNoop bool) (rs []NewDecoderFunc) {
 	ext := strings.ToLower(strings.TrimLeft(filepath.Ext(filename), "."))
-	for _, dec := range decoderRegistry[ext] {
+	for _, dec := range DecoderRegistry[ext] {
 		if skipNoop && dec.noop {
 			continue
 		}
