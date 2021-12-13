@@ -17,7 +17,7 @@ type rc4Cipher struct {
 func NewRC4Cipher(key []byte) (*rc4Cipher, error) {
 	n := len(key)
 	if n == 0 {
-		return nil, errors.New("crypto/rc4: invalid key size")
+		return nil, errors.New("qmc/cipher_rc4: invalid key size")
 	}
 
 	var c = rc4Cipher{key: key}
@@ -54,7 +54,7 @@ func (c *rc4Cipher) getHashBase() {
 
 const rc4SegmentSize = 5120
 
-func (c *rc4Cipher) Process(src []byte, offset int) {
+func (c *rc4Cipher) Decrypt(src []byte, offset int) {
 	toProcess := len(src)
 	processed := 0
 	markProcess := func(p int) (finished bool) {

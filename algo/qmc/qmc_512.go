@@ -13,7 +13,7 @@ type Mflac0Decoder struct {
 
 	audioLen   int
 	decodedKey []byte
-	rc4        *rc4Cipher
+	cipher     streamCipher
 	offset     int
 
 	rawMetaExtra1 int
@@ -21,6 +21,14 @@ type Mflac0Decoder struct {
 }
 
 func (d *Mflac0Decoder) Read(p []byte) (int, error) {
+	if d.cipher != nil {
+		return d.readRC4(p)
+	} else {
+		panic("not impl")
+		//return d.readPlain(p)
+	}
+}
+func (d *Mflac0Decoder) readRC4(p []byte) (int, error) {
 	n := len(p)
 	if d.audioLen-d.offset <= 0 {
 		return 0, io.EOF
@@ -32,32 +40,37 @@ func (d *Mflac0Decoder) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	d.rc4.Process(p[:m], d.offset)
+	d.cipher.Decrypt(p[:m], d.offset)
 	d.offset += m
 	return m, err
-
 }
 
 func NewMflac0Decoder(r io.ReadSeeker) (*Mflac0Decoder, error) {
 	d := &Mflac0Decoder{r: r}
-	if err := d.searchKey(); err != nil {
+	err := d.searchKey()
+	if err != nil {
 		return nil, err
 	}
 
-	if len(d.decodedKey) > 300 {
-		var err error
-		d.rc4, err = NewRC4Cipher(d.decodedKey)
+	if len(d.decodedKey) == 0 {
+		return nil, errors.New("invalid decoded key")
+	} else if len(d.decodedKey) > 300 {
+		d.cipher, err = NewRC4Cipher(d.decodedKey)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		panic("not implement") //todo: impl
+		d.cipher, err = NewMapCipher(d.decodedKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	_, err := d.r.Seek(0, io.SeekStart)
+	_, err = d.r.Seek(0, io.SeekStart)
 	if err != nil {
 		return nil, err
 	}
+
 	return d, nil
 }
 
@@ -73,7 +86,35 @@ func (d *Mflac0Decoder) searchKey() error {
 		if err := d.readRawMetaQTag(); err != nil {
 			return err
 		}
-	} // todo: ...
+	} else {
+		size := binary.LittleEndian.Uint32(buf)
+		if size < 0x300 {
+			return d.readRawKey(int64(size))
+		} else {
+			// todo: try to use fixed key
+			panic("not impl")
+		}
+	}
+	return nil
+}
+
+func (d *Mflac0Decoder) readRawKey(rawKeyLen int64) error {
+	audioLen, err := d.r.Seek(-(4 + rawKeyLen), io.SeekEnd)
+	if err != nil {
+		return err
+	}
+	d.audioLen = int(audioLen)
+
+	rawKeyData, err := io.ReadAll(io.LimitReader(d.r, rawKeyLen))
+	if err != nil {
+		return err
+	}
+
+	d.decodedKey, err = DecryptKey(rawKeyData)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -104,12 +145,9 @@ func (d *Mflac0Decoder) readRawMetaQTag() error {
 		return errors.New("invalid raw meta data")
 	}
 
-	{
-
-		d.decodedKey, err = DecryptKey([]byte(items[0]))
-		if err != nil {
-			return err
-		}
+	d.decodedKey, err = DecryptKey([]byte(items[0]))
+	if err != nil {
+		return err
 	}
 
 	d.rawMetaExtra1, err = strconv.Atoi(items[1])

@@ -2,23 +2,24 @@ package qmc
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"reflect"
 	"testing"
 )
 
-func loadTestDataRC4Mflac0() ([]byte, []byte, error) {
-	encBody, err := os.ReadFile("./testdata/rc4_raw.bin")
+func loadTestDataQmcDecoder(filename string) ([]byte, []byte, error) {
+	encBody, err := os.ReadFile(fmt.Sprintf("./testdata/%s_raw.bin", filename))
 	if err != nil {
 		return nil, nil, err
 	}
-	encSuffix, err := os.ReadFile("./testdata/rc4_suffix_mflac0.bin")
+	encSuffix, err := os.ReadFile(fmt.Sprintf("./testdata/%s_suffix.bin", filename))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	target, err := os.ReadFile("./testdata/rc4_target.bin")
+	target, err := os.ReadFile(fmt.Sprintf("./testdata/%s_target.bin", filename))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -26,23 +27,35 @@ func loadTestDataRC4Mflac0() ([]byte, []byte, error) {
 
 }
 func TestMflac0Decoder_Read(t *testing.T) {
-	raw, target, err := loadTestDataRC4Mflac0()
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name     string
+		filename string
+		wantErr  bool
+	}{
+		{"mflac0_rc4(512)", "mflac0_rc4", false},
+		{"mflac_map(256)", "mflac_map", false},
 	}
 
-	t.Run("mflac0-file", func(t *testing.T) {
-		d, err := NewMflac0Decoder(bytes.NewReader(raw))
-		if err != nil {
-			t.Error(err)
-		}
-		buf := make([]byte, len(target))
-		if _, err := io.ReadFull(d, buf); err != nil {
-			t.Errorf("read bytes from decoder error = %v", err)
-			return
-		}
-		if !reflect.DeepEqual(buf, target) {
-			t.Errorf("Process() got = %v, want %v", buf[:32], target[:32])
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			raw, target, err := loadTestDataQmcDecoder(tt.filename)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			d, err := NewMflac0Decoder(bytes.NewReader(raw))
+			if err != nil {
+				t.Error(err)
+			}
+			buf := make([]byte, len(target))
+			if _, err := io.ReadFull(d, buf); err != nil {
+				t.Errorf("read bytes from decoder error = %v", err)
+				return
+			}
+			if !reflect.DeepEqual(buf, target) {
+				t.Errorf("Decrypt() got = %v, want %v", buf[:32], target[:32])
+			}
+		})
+	}
+
 }

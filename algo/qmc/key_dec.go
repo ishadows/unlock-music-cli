@@ -18,10 +18,14 @@ func simpleMakeKey(salt byte, length int) []byte {
 }
 func DecryptKey(rawKey []byte) ([]byte, error) {
 	rawKeyDec := make([]byte, base64.StdEncoding.DecodedLen(len(rawKey)))
-	_, err := base64.StdEncoding.Decode(rawKeyDec, rawKey)
+	n, err := base64.StdEncoding.Decode(rawKeyDec, rawKey)
 	if err != nil {
 		return nil, err
 	}
+	if n < 16 {
+		return nil, errors.New("key length is too short")
+	}
+	rawKeyDec = rawKeyDec[:n]
 
 	simpleKey := simpleMakeKey(106, 8)
 	teaKey := make([]byte, 16)

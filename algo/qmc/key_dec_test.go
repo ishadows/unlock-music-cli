@@ -1,6 +1,7 @@
 package qmc
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -14,38 +15,41 @@ func TestSimpleMakeKey(t *testing.T) {
 		}
 	})
 }
-
+func loadDecryptKeyData(name string) ([]byte, []byte, error) {
+	keyRaw, err := os.ReadFile(fmt.Sprintf("./testdata/%s_key_raw.bin", name))
+	if err != nil {
+		return nil, nil, err
+	}
+	keyDec, err := os.ReadFile(fmt.Sprintf("./testdata/%s_key.bin", name))
+	if err != nil {
+		return nil, nil, err
+	}
+	return keyRaw, keyDec, nil
+}
 func TestDecryptKey(t *testing.T) {
-	rc4Raw, err := os.ReadFile("./testdata/rc4_key_raw.bin")
-	if err != nil {
-		t.Error(err)
-	}
-	rc4Dec, err := os.ReadFile("./testdata/rc4_key.bin")
-	if err != nil {
-		t.Error(err)
-	}
+
 	tests := []struct {
-		name    string
-		rawKey  []byte
-		want    []byte
-		wantErr bool
+		name     string
+		filename string
+		wantErr  bool
 	}{
-		{
-			"512",
-			rc4Raw,
-			rc4Dec,
-			false,
-		},
+		{"mflac0_rc4(512)", "mflac0_rc4", false},
+		{"mflac_map(256)", "mflac_map", false},
 	}
 	for _, tt := range tests {
+		raw, want, err := loadDecryptKeyData(tt.filename)
+		if err != nil {
+			t.Fatalf("load test data failed: %s", err)
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := DecryptKey(tt.rawKey)
+			got, err := DecryptKey(raw)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DecryptKey() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DecryptKey() got = %v..., want %v...", string(got[:32]), string(tt.want[:32]))
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("DecryptKey() got = %v..., want %v...",
+					string(got[:32]), string(want[:32]))
 			}
 		})
 	}
