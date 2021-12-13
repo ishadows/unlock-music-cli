@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
+
 	"github.com/unlock-music/cli/algo/common"
 )
 
@@ -13,7 +14,7 @@ var (
 	ErrQmcKeyLength       = errors.New("unexpected decoded qmc key length")
 )
 
-type Decoder struct {
+type OldDecoder struct {
 	file         []byte
 	maskDetector func(encodedData []byte) (*Key256Mask, error)
 	mask         *Key256Mask
@@ -23,14 +24,14 @@ type Decoder struct {
 }
 
 func NewMflac256Decoder(data []byte) common.Decoder {
-	return &Decoder{file: data, maskDetector: detectMflac256Mask, audioExt: "flac"}
+	return &OldDecoder{file: data, maskDetector: detectMflac256Mask, audioExt: "flac"}
 }
 
 func NewMgg256Decoder(data []byte) common.Decoder {
-	return &Decoder{file: data, maskDetector: detectMgg256Mask, audioExt: "ogg"}
+	return &OldDecoder{file: data, maskDetector: detectMgg256Mask, audioExt: "ogg"}
 }
 
-func (d *Decoder) Validate() error {
+func (d *OldDecoder) Validate() error {
 	if nil != d.mask {
 		return nil
 	}
@@ -45,7 +46,7 @@ func (d *Decoder) Validate() error {
 	return errors.New("no mask or mask detector found")
 }
 
-func (d *Decoder) validateKey() error {
+func (d *OldDecoder) validateKey() error {
 	lenData := len(d.file)
 	if lenData < 4 {
 		return ErrQmcFileLength
@@ -70,33 +71,33 @@ func (d *Decoder) validateKey() error {
 
 }
 
-func (d *Decoder) Decode() error {
+func (d *OldDecoder) Decode() error {
 	d.audio = d.mask.Decrypt(d.file)
 	return nil
 }
 
-func (d Decoder) GetCoverImage() []byte {
+func (d OldDecoder) GetCoverImage() []byte {
 	return nil
 }
 
-func (d Decoder) GetAudioData() []byte {
+func (d OldDecoder) GetAudioData() []byte {
 	return d.audio
 }
 
-func (d Decoder) GetAudioExt() string {
+func (d OldDecoder) GetAudioExt() string {
 	if d.audioExt != "" {
 		return "." + d.audioExt
 	}
 	return ""
 }
 
-func (d Decoder) GetMeta() common.Meta {
+func (d OldDecoder) GetMeta() common.Meta {
 	return nil
 }
 
 func DecoderFuncWithExt(ext string) common.NewDecoderFunc {
 	return func(file []byte) common.Decoder {
-		return &Decoder{file: file, audioExt: ext, mask: getDefaultMask()}
+		return &OldDecoder{file: file, audioExt: ext, mask: getDefaultMask()}
 	}
 }
 

@@ -6,10 +6,13 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/unlock-music/cli/algo/common"
 )
 
-type Mflac0Decoder struct {
-	r io.ReadSeeker
+type Decoder struct {
+	r       io.ReadSeeker
+	fileExt string
 
 	audioLen   int
 	decodedKey []byte
@@ -20,15 +23,9 @@ type Mflac0Decoder struct {
 	rawMetaExtra2 int
 }
 
-func (d *Mflac0Decoder) Read(p []byte) (int, error) {
-	if d.cipher != nil {
-		return d.readRC4(p)
-	} else {
-		panic("not impl")
-		//return d.readPlain(p)
-	}
-}
-func (d *Mflac0Decoder) readRC4(p []byte) (int, error) {
+// Read implements io.Reader, offer the decrypted audio data.
+// Validate should call before Read to check if the file is valid.
+func (d *Decoder) Read(p []byte) (int, error) {
 	n := len(p)
 	if d.audioLen-d.offset <= 0 {
 		return 0, io.EOF
@@ -45,25 +42,25 @@ func (d *Mflac0Decoder) readRC4(p []byte) (int, error) {
 	return m, err
 }
 
-func NewMflac0Decoder(r io.ReadSeeker) (*Mflac0Decoder, error) {
-	d := &Mflac0Decoder{r: r}
+func NewDecoder(r io.ReadSeeker) (*Decoder, error) {
+	d := &Decoder{r: r}
 	err := d.searchKey()
 	if err != nil {
 		return nil, err
 	}
 
-	if len(d.decodedKey) == 0 {
-		return nil, errors.New("invalid decoded key")
-	} else if len(d.decodedKey) > 300 {
+	if len(d.decodedKey) > 300 {
 		d.cipher, err = NewRC4Cipher(d.decodedKey)
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	} else if len(d.decodedKey) != 0 {
 		d.cipher, err = NewMapCipher(d.decodedKey)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		d.cipher = NewStaticCipher()
 	}
 
 	_, err = d.r.Seek(0, io.SeekStart)
@@ -74,8 +71,32 @@ func NewMflac0Decoder(r io.ReadSeeker) (*Mflac0Decoder, error) {
 	return d, nil
 }
 
-func (d *Mflac0Decoder) searchKey() error {
-	if _, err := d.r.Seek(-4, io.SeekEnd); err != nil {
+func (d *Decoder) Validate() error {
+	buf := make([]byte, 16)
+	if _, err := io.ReadFull(d.r, buf); err != nil {
+		return err
+	}
+	_, err := d.r.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
+	d.cipher.Decrypt(buf, 0)
+	fileExt, ok := common.SniffAll(buf)
+	if !ok {
+		return errors.New("detect file type failed")
+	}
+	d.fileExt = fileExt
+	return nil
+}
+
+func (d Decoder) GetFileExt() string {
+	return d.fileExt
+}
+
+func (d *Decoder) searchKey() error {
+	fileSizeM4, err := d.r.Seek(-4, io.SeekEnd)
+	if err != nil {
 		return err
 	}
 	buf, err := io.ReadAll(io.LimitReader(d.r, 4))
@@ -88,17 +109,18 @@ func (d *Mflac0Decoder) searchKey() error {
 		}
 	} else {
 		size := binary.LittleEndian.Uint32(buf)
-		if size < 0x300 {
+		if size < 0x300 && size != 0 {
 			return d.readRawKey(int64(size))
 		} else {
-			// todo: try to use fixed key
-			panic("not impl")
+			// try to use default static cipher
+			d.audioLen = int(fileSizeM4 + 4)
+			return nil
 		}
 	}
 	return nil
 }
 
-func (d *Mflac0Decoder) readRawKey(rawKeyLen int64) error {
+func (d *Decoder) readRawKey(rawKeyLen int64) error {
 	audioLen, err := d.r.Seek(-(4 + rawKeyLen), io.SeekEnd)
 	if err != nil {
 		return err
@@ -118,7 +140,7 @@ func (d *Mflac0Decoder) readRawKey(rawKeyLen int64) error {
 	return nil
 }
 
-func (d *Mflac0Decoder) readRawMetaQTag() error {
+func (d *Decoder) readRawMetaQTag() error {
 	// get raw meta data len
 	if _, err := d.r.Seek(-8, io.SeekEnd); err != nil {
 		return err
