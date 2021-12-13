@@ -1,6 +1,7 @@
 package qmc
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -181,5 +182,82 @@ func (d *Decoder) readRawMetaQTag() error {
 		return err
 	}
 
+	return nil
+}
+
+//goland:noinspection SpellCheckingInspection
+func init() {
+	supportedExts := []string{
+		"qmc0", "qmc3", //QQ Music MP3
+		"qmc2", "qmc4", "qmc6", "qmc8", //QQ Music M4A
+		"qmcflac", //QQ Music FLAC
+		"qmcogg",  //QQ Music OGG
+
+		"tkm",     //QQ Music Accompaniment M4A
+		"bkcmp3",  //Moo Music Mp3
+		"bkcflac", //Moo Music Flac
+
+		"666c6163", //QQ Music Weiyun Flac
+		"6d7033",   //QQ Music Weiyun Mp3
+		"6f6767",   //QQ Music Weiyun Ogg
+		"6d3461",   //QQ Music Weiyun M4a
+		"776176",   //QQ Music Weiyun Wav
+
+		"mgg", "mgg1", //QQ Music New Ogg
+		"mflac", "mflac0", //QQ Music New Flac
+	}
+	for _, ext := range supportedExts {
+		common.RegisterDecoder(ext, false, newCompactDecoder)
+	}
+}
+
+type compactDecoder struct {
+	decoder   *Decoder
+	createErr error
+	buf       *bytes.Buffer
+}
+
+func newCompactDecoder(p []byte) common.Decoder {
+	r := bytes.NewReader(p)
+	d, err := NewDecoder(r)
+	c := compactDecoder{
+		decoder:   d,
+		createErr: err,
+	}
+	return &c
+}
+
+func (c *compactDecoder) Validate() error {
+	if c.createErr != nil {
+		return c.createErr
+	}
+	return c.decoder.Validate()
+}
+
+func (c *compactDecoder) Decode() error {
+	if c.createErr != nil {
+		return c.createErr
+	}
+	c.buf = bytes.NewBuffer(nil)
+	_, err := io.Copy(c.buf, c.decoder)
+	return err
+}
+
+func (c *compactDecoder) GetCoverImage() []byte {
+	return nil
+}
+
+func (c *compactDecoder) GetAudioData() []byte {
+	return c.buf.Bytes()
+}
+
+func (c *compactDecoder) GetAudioExt() string {
+	if c.createErr != nil {
+		return ""
+	}
+	return c.decoder.GetFileExt()
+}
+
+func (c *compactDecoder) GetMeta() common.Meta {
 	return nil
 }
