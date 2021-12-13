@@ -33,6 +33,7 @@ func TestMflac0Decoder_Read(t *testing.T) {
 	}{
 		{"mflac0_rc4", false},
 		{"mflac_map", false},
+		{"mgg_map", false},
 		{"qmc0_static", false},
 	}
 
@@ -69,6 +70,7 @@ func TestMflac0Decoder_Validate(t *testing.T) {
 	}{
 		{"mflac0_rc4", ".flac", false},
 		{"mflac_map", ".flac", false},
+		{"mgg_map", ".ogg", false},
 		{"qmc0_static", ".mp3", false},
 	}
 
