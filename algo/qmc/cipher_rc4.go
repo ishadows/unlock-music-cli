@@ -6,10 +6,10 @@ import (
 
 // A rc4Cipher is an instance of RC4 using a particular key.
 type rc4Cipher struct {
-	box    []byte
-	key    []byte
-	hash   uint32
-	boxTmp []byte
+	box  []byte
+	key  []byte
+	hash uint32
+	n    int
 }
 
 // NewRC4Cipher creates and returns a new rc4Cipher. The key argument should be the
@@ -20,9 +20,8 @@ func NewRC4Cipher(key []byte) (*rc4Cipher, error) {
 		return nil, errors.New("qmc/cipher_rc4: invalid key size")
 	}
 
-	var c = rc4Cipher{key: key}
+	var c = rc4Cipher{key: key, n: n}
 	c.box = make([]byte, n)
-	c.boxTmp = make([]byte, n)
 
 	for i := 0; i < n; i++ {
 		c.box[i] = byte(i)
@@ -39,7 +38,7 @@ func NewRC4Cipher(key []byte) (*rc4Cipher, error) {
 
 func (c *rc4Cipher) getHashBase() {
 	c.hash = 1
-	for i := 0; i < len(c.key); i++ {
+	for i := 0; i < c.n; i++ {
 		v := uint32(c.key[i])
 		if v == 0 {
 			continue
@@ -52,7 +51,10 @@ func (c *rc4Cipher) getHashBase() {
 	}
 }
 
-const rc4SegmentSize = 5120
+const (
+	rc4SegmentSize      = 5120
+	rc4FirstSegmentSize = 128
+)
 
 func (c *rc4Cipher) Decrypt(src []byte, offset int) {
 	toProcess := len(src)
@@ -64,10 +66,10 @@ func (c *rc4Cipher) Decrypt(src []byte, offset int) {
 		return toProcess == 0
 	}
 
-	if offset < 128 {
+	if offset < rc4FirstSegmentSize {
 		blockSize := toProcess
-		if blockSize > 128-offset {
-			blockSize = 128 - offset
+		if blockSize > rc4FirstSegmentSize-offset {
+			blockSize = rc4FirstSegmentSize - offset
 		}
 		c.encFirstSegment(src[:blockSize], offset)
 		if markProcess(blockSize) {
@@ -80,8 +82,7 @@ func (c *rc4Cipher) Decrypt(src []byte, offset int) {
 		if blockSize > rc4SegmentSize-offset%rc4SegmentSize {
 			blockSize = rc4SegmentSize - offset%rc4SegmentSize
 		}
-		k := src[processed : processed+blockSize]
-		c.encASegment(k, offset)
+		c.encASegment(src[processed:processed+blockSize], offset)
 		if markProcess(blockSize) {
 			return
 		}
@@ -96,38 +97,28 @@ func (c *rc4Cipher) Decrypt(src []byte, offset int) {
 	}
 }
 func (c *rc4Cipher) encFirstSegment(buf []byte, offset int) {
-	n := len(c.box)
 	for i := 0; i < len(buf); i++ {
-		idx1 := offset + i
-		segmentID := int(c.key[idx1%n])
-		idx2 := int(float64(c.hash) / float64((idx1+1)*segmentID) * 100.0)
-		buf[i] ^= c.key[idx2%n]
+		buf[i] ^= c.key[c.getSegmentSkip(offset+i)]
 	}
 }
 
 func (c *rc4Cipher) encASegment(buf []byte, offset int) {
-	n := len(c.box)
-	copy(c.boxTmp, c.box)
-
-	segmentID := (offset / rc4SegmentSize) & 0x1FF
-
-	if n <= segmentID {
-		return
-	}
-
-	idx2 := int64(float64(c.hash) /
-		float64((offset/rc4SegmentSize+1)*int(c.key[segmentID])) *
-		100.0)
-	skipLen := int((idx2 & 0x1FF) + int64(offset%rc4SegmentSize))
-
+	box := make([]byte, c.n)
+	copy(box, c.box)
 	j, k := 0, 0
 
+	skipLen := (offset % rc4SegmentSize) + c.getSegmentSkip(offset/rc4SegmentSize)
 	for i := -skipLen; i < len(buf); i++ {
-		j = (j + 1) % n
-		k = (int(c.boxTmp[j]) + k) % n
-		c.boxTmp[j], c.boxTmp[k] = c.boxTmp[k], c.boxTmp[j]
+		j = (j + 1) % c.n
+		k = (int(box[j]) + k) % c.n
+		box[j], box[k] = box[k], box[j]
 		if i >= 0 {
-			buf[i] ^= c.boxTmp[int(c.boxTmp[j])+int(c.boxTmp[k])%n]
+			buf[i] ^= box[(int(box[j])+int(box[k]))%c.n]
 		}
 	}
+}
+func (c *rc4Cipher) getSegmentSkip(id int) int {
+	seed := int(c.key[id%c.n])
+	idx := int(float64(c.hash) / float64((id+1)*seed) * 100.0)
+	return idx % c.n
 }

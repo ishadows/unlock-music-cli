@@ -40,6 +40,21 @@ func Test_rc4Cipher_Decrypt(t *testing.T) {
 	})
 
 }
+func BenchmarkRc4Cipher_Decrypt(b *testing.B) {
+	key, raw, _, err := loadTestRC4CipherData()
+	if err != nil {
+		b.Fatalf("load testing data failed: %s", err)
+	}
+	c, err := NewRC4Cipher(key)
+	if err != nil {
+		b.Errorf("init rc4Cipher failed: %s", err)
+		return
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Decrypt(raw, 0)
+	}
+}
 
 func Test_rc4Cipher_encFirstSegment(t *testing.T) {
 	key, raw, target, err := loadTestRC4CipherData()
