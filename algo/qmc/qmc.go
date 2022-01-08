@@ -193,9 +193,9 @@ func init() {
 		"qmcflac", //QQ Music FLAC
 		"qmcogg",  //QQ Music OGG
 
-		"tkm",     //QQ Music Accompaniment M4A
-		"bkcmp3",  //Moo Music Mp3
-		"bkcflac", //Moo Music Flac
+		"tkm", //QQ Music Accompaniment M4A
+
+		"bkcmp3", "bkcm4a", "bkcflac", "bkcwav", "bkcape", "bkcogg", "bkcwma", //Moo Music
 
 		"666c6163", //QQ Music Weiyun Flac
 		"6d7033",   //QQ Music Weiyun Mp3
@@ -203,7 +203,7 @@ func init() {
 		"6d3461",   //QQ Music Weiyun M4a
 		"776176",   //QQ Music Weiyun Wav
 
-		"mgg", "mgg1", //QQ Music New Ogg
+		"mgg", "mgg1", "mggl", //QQ Music New Ogg
 		"mflac", "mflac0", //QQ Music New Flac
 	}
 	for _, ext := range supportedExts {
