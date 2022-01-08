@@ -119,6 +119,6 @@ func (c *rc4Cipher) encASegment(buf []byte, offset int) {
 }
 func (c *rc4Cipher) getSegmentSkip(id int) int {
 	seed := int(c.key[id%c.n])
-	idx := int(float64(c.hash) / float64((id+1)*seed) * 100.0)
-	return idx % c.n
+	idx := int64(float64(c.hash) / float64((id+1)*seed) * 100.0)
+	return int(idx % int64(c.n))
 }
