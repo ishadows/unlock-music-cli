@@ -27,7 +27,6 @@ func loadDecryptKeyData(name string) ([]byte, []byte, error) {
 	return keyRaw, keyDec, nil
 }
 func TestDecryptKey(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		filename string
@@ -35,13 +34,15 @@ func TestDecryptKey(t *testing.T) {
 	}{
 		{"mflac0_rc4(512)", "mflac0_rc4", false},
 		{"mflac_map(256)", "mflac_map", false},
+		{"mflac_rc4(256)", "mflac_rc4", false},
+		{"mgg_map(256)", "mgg_map", false},
 	}
 	for _, tt := range tests {
-		raw, want, err := loadDecryptKeyData(tt.filename)
-		if err != nil {
-			t.Fatalf("load test data failed: %s", err)
-		}
 		t.Run(tt.name, func(t *testing.T) {
+			raw, want, err := loadDecryptKeyData(tt.filename)
+			if err != nil {
+				t.Fatalf("load test data failed: %s", err)
+			}
 			got, err := DecryptKey(raw)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DecryptKey() error = %v, wantErr %v", err, tt.wantErr)

@@ -32,6 +32,7 @@ func TestMflac0Decoder_Read(t *testing.T) {
 		wantErr bool
 	}{
 		{"mflac0_rc4", false},
+		{"mflac_rc4", false},
 		{"mflac_map", false},
 		{"mgg_map", false},
 		{"qmc0_static", false},

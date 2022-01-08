@@ -6,16 +6,17 @@ import (
 	"testing"
 )
 
-func loadTestRC4CipherData() ([]byte, []byte, []byte, error) {
-	key, err := os.ReadFile("./testdata/mflac0_rc4_key.bin")
+func loadTestRC4CipherData(name string) ([]byte, []byte, []byte, error) {
+	prefix := "./testdata/" + name
+	key, err := os.ReadFile(prefix + "_key.bin")
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	raw, err := os.ReadFile("./testdata/mflac0_rc4_raw.bin")
+	raw, err := os.ReadFile(prefix + "_raw.bin")
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	target, err := os.ReadFile("./testdata/mflac0_rc4_target.bin")
+	target, err := os.ReadFile(prefix + "_target.bin")
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -23,25 +24,34 @@ func loadTestRC4CipherData() ([]byte, []byte, []byte, error) {
 	return key, raw, target, nil
 }
 func Test_rc4Cipher_Decrypt(t *testing.T) {
-	key, raw, target, err := loadTestRC4CipherData()
-	if err != nil {
-		t.Fatalf("load testing data failed: %s", err)
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{"mflac0_rc4", false},
+		{"mflac_rc4", false},
 	}
-	t.Run("overall", func(t *testing.T) {
-		c, err := NewRC4Cipher(key)
-		if err != nil {
-			t.Errorf("init rc4Cipher failed: %s", err)
-			return
-		}
-		c.Decrypt(raw, 0)
-		if !reflect.DeepEqual(raw, target) {
-			t.Error("overall")
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key, raw, target, err := loadTestRC4CipherData(tt.name)
+			if err != nil {
+				t.Fatalf("load testing data failed: %s", err)
+			}
+			c, err := NewRC4Cipher(key)
+			if err != nil {
+				t.Errorf("init rc4Cipher failed: %s", err)
+				return
+			}
+			c.Decrypt(raw, 0)
+			if !reflect.DeepEqual(raw, target) {
+				t.Error("overall")
+			}
+		})
+	}
 
 }
 func BenchmarkRc4Cipher_Decrypt(b *testing.B) {
-	key, raw, _, err := loadTestRC4CipherData()
+	key, raw, _, err := loadTestRC4CipherData("mflac0_rc4")
 	if err != nil {
 		b.Fatalf("load testing data failed: %s", err)
 	}
@@ -57,7 +67,7 @@ func BenchmarkRc4Cipher_Decrypt(b *testing.B) {
 }
 
 func Test_rc4Cipher_encFirstSegment(t *testing.T) {
-	key, raw, target, err := loadTestRC4CipherData()
+	key, raw, target, err := loadTestRC4CipherData("mflac0_rc4")
 	if err != nil {
 		t.Fatalf("load testing data failed: %s", err)
 	}
@@ -75,7 +85,7 @@ func Test_rc4Cipher_encFirstSegment(t *testing.T) {
 }
 
 func Test_rc4Cipher_encASegment(t *testing.T) {
-	key, raw, target, err := loadTestRC4CipherData()
+	key, raw, target, err := loadTestRC4CipherData("mflac0_rc4")
 	if err != nil {
 		t.Fatalf("load testing data failed: %s", err)
 	}
